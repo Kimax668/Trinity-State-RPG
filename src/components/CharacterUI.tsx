@@ -5,8 +5,8 @@ import { Item } from '@/types/game';
 import { 
   Sword,
   Shield,
-  Helmet,
-  Ring
+  Axe,
+  Backpack
 } from 'lucide-react';
 
 const CharacterUI: React.FC = () => {
@@ -20,9 +20,9 @@ const CharacterUI: React.FC = () => {
       case 'ruestung':
         return <Shield className="h-4 w-4 mr-1" />;
       case 'helm':
-        return <Helmet className="h-4 w-4 mr-1" />;
+        return <Axe className="h-4 w-4 mr-1" />; // Using Axe icon for helm
       case 'accessoire':
-        return <Ring className="h-4 w-4 mr-1" />;
+        return <Backpack className="h-4 w-4 mr-1" />; // Using Backpack icon for accessory
       default:
         return null;
     }
