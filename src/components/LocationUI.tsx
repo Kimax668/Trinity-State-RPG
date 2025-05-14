@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const LocationUI: React.FC = () => {
   const { state, dispatch } = useGameContext();
@@ -185,37 +186,39 @@ const LocationUI: React.FC = () => {
             <div className="space-y-4">
               <p>Verfügbare Items im Shop:</p>
               
-              <div className="grid gap-3">
-                {Object.values(state.items).map((item, index) => (
-                  <Card key={index} className="bg-white bg-opacity-80">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-semibold">{item.name}</h3>
-                          <p className="text-sm text-gray-600">{item.beschreibung}</p>
-                          <div className="text-xs mt-1">
-                            {Object.entries(item.boni).map(([key, value]) => (
-                              <span key={key} className="inline-block mr-2 bg-gray-100 px-1 rounded">
-                                {key}: +{value}
-                              </span>
-                            ))}
+              <ScrollArea className="h-[60vh]">
+                <div className="grid gap-3 pr-4">
+                  {Object.values(state.items).map((item, index) => (
+                    <Card key={index} className="bg-white bg-opacity-80">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h3 className="font-semibold">{item.name}</h3>
+                            <p className="text-sm text-gray-600">{item.beschreibung}</p>
+                            <div className="text-xs mt-1">
+                              {Object.entries(item.boni).map(([key, value]) => (
+                                <span key={key} className="inline-block mr-2 bg-gray-100 px-1 rounded">
+                                  {key}: +{value}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="text-yellow-600 font-semibold">{item.preis} Gold</span>
+                            <Button 
+                              className="rpg-button text-sm py-1 px-2"
+                              onClick={() => handleBuyItem(item)}
+                              disabled={character.gold < item.preis}
+                            >
+                              Kaufen
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <span className="text-yellow-600 font-semibold">{item.preis} Gold</span>
-                          <Button 
-                            className="rpg-button text-sm py-1 px-2"
-                            onClick={() => handleBuyItem(item)}
-                            disabled={character.gold < item.preis}
-                          >
-                            Kaufen
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
           )}
           
@@ -286,97 +289,101 @@ const LocationUI: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="spells">
-                <div className="space-y-4 py-4">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold">Dein Gold:</span>
-                    <span className="text-yellow-600 font-semibold">{character.gold}</span>
+                <ScrollArea className="h-[50vh]">
+                  <div className="space-y-4 py-4 pr-4">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">Dein Gold:</span>
+                      <span className="text-yellow-600 font-semibold">{character.gold}</span>
+                    </div>
+                    
+                    <div className="grid gap-3">
+                      {getAvailableSpells().length > 0 ? (
+                        getAvailableSpells().map((spell, index) => (
+                          <Card key={index}>
+                            <CardContent className="p-4 flex justify-between items-center">
+                              <div>
+                                <h3 className="font-semibold">{spell}</h3>
+                                <p className="text-sm text-gray-600">
+                                  Ein mächtiger Zauber, der {
+                                    spell === "Feuerball" ? "Feuerschaden verursacht" :
+                                    spell === "Eisstrahl" ? "Gegner einfriert" :
+                                    spell === "Heilung" ? "deine Gesundheit regeneriert" :
+                                    "Blitzschaden verursacht"
+                                  }
+                                </p>
+                              </div>
+                              <Button 
+                                className="rpg-button" 
+                                onClick={() => handleLearnSpell(spell)}
+                                disabled={character.gold < 50}
+                              >
+                                Lernen (50 Gold)
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))
+                      ) : (
+                        <p className="text-center italic">Du kennst bereits alle verfügbaren Zauber</p>
+                      )}
+                    </div>
                   </div>
-                  
-                  <div className="grid gap-3">
-                    {getAvailableSpells().length > 0 ? (
-                      getAvailableSpells().map((spell, index) => (
-                        <Card key={index}>
-                          <CardContent className="p-4 flex justify-between items-center">
-                            <div>
-                              <h3 className="font-semibold">{spell}</h3>
-                              <p className="text-sm text-gray-600">
-                                Ein mächtiger Zauber, der {
-                                  spell === "Feuerball" ? "Feuerschaden verursacht" :
-                                  spell === "Eisstrahl" ? "Gegner einfriert" :
-                                  spell === "Heilung" ? "deine Gesundheit regeneriert" :
-                                  "Blitzschaden verursacht"
-                                }
-                              </p>
-                            </div>
-                            <Button 
-                              className="rpg-button" 
-                              onClick={() => handleLearnSpell(spell)}
-                              disabled={character.gold < 50}
-                            >
-                              Lernen (50 Gold)
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))
-                    ) : (
-                      <p className="text-center italic">Du kennst bereits alle verfügbaren Zauber</p>
-                    )}
-                  </div>
-                </div>
+                </ScrollArea>
               </TabsContent>
             </Tabs>
           )}
           
           {dialogContent.type === 'npc' && (
-            <div className="space-y-4">
-              {locationNpcs.length > 0 ? (
-                locationNpcs.map((npc, index) => (
-                  <Card key={index} className="bg-white bg-opacity-80">
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-lg">{npc.name}</h3>
-                      <p className="italic mb-2">"{npc.dialog.gruss}"</p>
-                      
-                      <Tabs defaultValue="talk">
-                        <TabsList className="w-full">
-                          <TabsTrigger value="talk" className="flex-1">Gespräch</TabsTrigger>
-                          <TabsTrigger value="trade" className="flex-1">Handel</TabsTrigger>
-                        </TabsList>
+            <ScrollArea className="h-[60vh]">
+              <div className="space-y-4 pr-4">
+                {locationNpcs.length > 0 ? (
+                  locationNpcs.map((npc, index) => (
+                    <Card key={index} className="bg-white bg-opacity-80">
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-lg">{npc.name}</h3>
+                        <p className="italic mb-2">"{npc.dialog.gruss}"</p>
                         
-                        <TabsContent value="talk" className="p-2">
-                          <p>"{npc.dialog.handel}"</p>
-                        </TabsContent>
-                        
-                        <TabsContent value="trade">
-                          <div className="space-y-2 pt-2">
-                            {npc.handel.map((item, idx) => (
-                              <div key={idx} className="flex justify-between items-center border-b pb-2">
-                                <div>
-                                  <div className="font-medium">{item.name}</div>
-                                  <div className="text-xs text-gray-600">{item.beschreibung}</div>
+                        <Tabs defaultValue="talk">
+                          <TabsList className="w-full">
+                            <TabsTrigger value="talk" className="flex-1">Gespräch</TabsTrigger>
+                            <TabsTrigger value="trade" className="flex-1">Handel</TabsTrigger>
+                          </TabsList>
+                          
+                          <TabsContent value="talk" className="p-2">
+                            <p>"{npc.dialog.handel}"</p>
+                          </TabsContent>
+                          
+                          <TabsContent value="trade">
+                            <div className="space-y-2 pt-2">
+                              {npc.handel.map((item, idx) => (
+                                <div key={idx} className="flex justify-between items-center border-b pb-2">
+                                  <div>
+                                    <div className="font-medium">{item.name}</div>
+                                    <div className="text-xs text-gray-600">{item.beschreibung}</div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-yellow-600 font-semibold">{item.preis}</span>
+                                    <Button 
+                                      size="sm"
+                                      className="rpg-button text-sm py-1"
+                                      onClick={() => handleBuyItem(item)}
+                                      disabled={character.gold < item.preis}
+                                    >
+                                      Kaufen
+                                    </Button>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-yellow-600 font-semibold">{item.preis}</span>
-                                  <Button 
-                                    size="sm"
-                                    className="rpg-button text-sm py-1"
-                                    onClick={() => handleBuyItem(item)}
-                                    disabled={character.gold < item.preis}
-                                  >
-                                    Kaufen
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </TabsContent>
-                      </Tabs>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <p className="text-center italic">Keine NPCs an diesem Ort verfügbar</p>
-              )}
-            </div>
+                              ))}
+                            </div>
+                          </TabsContent>
+                        </Tabs>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <p className="text-center italic">Keine NPCs an diesem Ort verfügbar</p>
+                )}
+              </div>
+            </ScrollArea>
           )}
         </DialogContent>
       </Dialog>
@@ -385,3 +392,4 @@ const LocationUI: React.FC = () => {
 };
 
 export default LocationUI;
+
