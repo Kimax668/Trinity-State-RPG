@@ -63,17 +63,45 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       const newState = { ...state };
       newState.character.aktueller_ort = action.location;
       
-      // Random encounter (30% chance)
-      if (Math.random() < 0.3 && action.location !== 'Stadt') {
+      // Increased random encounter chance (50% chance instead of 30%)
+      // Higher chance in dungeon-like locations
+      let encounterChance = 0.5;
+      if (action.location === "Höhle" || action.location === "Berge") {
+        encounterChance = 0.7; // 70% chance in dungeon-like locations
+      }
+      
+      if (Math.random() < encounterChance && action.location !== 'Stadt') {
         const location = action.location;
         const possibleMonsters = state.monsters[location] || [];
         
         if (possibleMonsters.length > 0) {
+          // Boss encounter chance (10%)
+          const isBossEncounter = Math.random() < 0.1;
+          
           // Select a monster based on probability
-          const monster = { ...possibleMonsters[Math.floor(Math.random() * possibleMonsters.length)] };
+          const monsterTemplate = { ...possibleMonsters[Math.floor(Math.random() * possibleMonsters.length)] };
+          const monster: Monster = { ...monsterTemplate };
+          
+          // If boss encounter, enhance the monster
+          if (isBossEncounter) {
+            monster.isBoss = true;
+            monster.name = `Boss ${monster.name}`;
+            monster.hp = Math.floor(monster.max_hp * 1.5);
+            monster.max_hp = monster.hp;
+            monster.staerke = Math.floor(monster.staerke * 1.5);
+            monster.xp = Math.floor(monster.xp * 2);
+            monster.lootChance = 0.8; // 80% loot chance for bosses
+          } else {
+            monster.lootChance = monster.lootChance || 0.3; // Default 30% loot chance
+          }
+          
           newState.currentMonster = monster;
           newState.gameScreen = 'combat';
-          newState.combatLog = [`Ein ${monster.name} erscheint!`];
+          newState.combatLog = [
+            isBossEncounter 
+              ? `Ein mächtiger Boss erscheint: ${monster.name}!` 
+              : `Ein ${monster.name} erscheint!`
+          ];
         }
       }
       
@@ -161,8 +189,10 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'FLEE_COMBAT': {
       const newState = { ...state };
       
-      // 50% chance to flee
-      if (Math.random() < 0.5) {
+      // Harder to flee from bosses (30% chance) vs regular monsters (50% chance)
+      const fleeChance = newState.currentMonster?.isBoss ? 0.3 : 0.5;
+      
+      if (Math.random() < fleeChance) {
         newState.combatLog = [...newState.combatLog, "Flucht erfolgreich!"];
         newState.currentMonster = null;
         newState.gameScreen = 'main';
@@ -327,10 +357,18 @@ const handleMonsterAttack = (state: GameState, monster: Monster): GameState => {
     return state;
   }
   
-  const damage = monster.staerke;
+  // Bosses deal more damage
+  const damage = monster.isBoss 
+    ? monster.staerke + Math.floor(Math.random() * 5) // Bosses have variable damage
+    : monster.staerke;
+    
   character.hp = Math.max(0, character.hp - damage);
   
-  state.combatLog = [...state.combatLog, `${monster.name} greift an und macht ${damage} Schaden!`];
+  const attackMessage = monster.isBoss
+    ? `${monster.name} schlägt mit voller Kraft zu und macht ${damage} Schaden!`
+    : `${monster.name} greift an und macht ${damage} Schaden!`;
+    
+  state.combatLog = [...state.combatLog, attackMessage];
   state.currentMonster = monster;
   
   // Check if player is defeated
@@ -357,21 +395,68 @@ const handleCombatVictory = (state: GameState, monster: Monster): GameState => {
   
   // Gain XP and Gold
   character.xp += monster.xp;
-  const goldEarned = Math.floor(Math.random() * 16) + 5; // 5-20 gold
+  
+  // Bosses drop more gold
+  const goldEarned = monster.isBoss
+    ? Math.floor(Math.random() * 30) + 20 // 20-50 gold for bosses
+    : Math.floor(Math.random() * 16) + 5; // 5-20 gold for regular monsters
+    
   character.gold += goldEarned;
   
+  const victoryMessage = monster.isBoss
+    ? `Du hast den mächtigen ${monster.name} besiegt!`
+    : `Du hast ${monster.name} besiegt!`;
+    
   state.combatLog = [
     ...state.combatLog,
-    `Du hast ${monster.name} besiegt!`,
+    victoryMessage,
     `Du erhältst ${monster.xp} XP und ${goldEarned} Gold!`
   ];
   
-  // Random loot (30% chance)
-  if (monster.loot.length > 0 && Math.random() < 0.3) {
-    const lootIndex = Math.floor(Math.random() * monster.loot.length);
-    const lootItem = monster.loot[lootIndex];
-    character.inventar.push(lootItem);
-    state.combatLog = [...state.combatLog, `Du findest ${lootItem.name}!`];
+  // Enhanced loot system
+  // Boss has guaranteed loot (possibly multiple items)
+  if (monster.loot.length > 0) {
+    const lootChance = monster.lootChance || 0.3; // Default 30% chance, bosses have 80%
+    
+    if (Math.random() < lootChance) {
+      // For bosses, possibly multiple items
+      if (monster.isBoss && monster.loot.length > 1 && Math.random() < 0.5) {
+        // 50% chance for bosses to drop 2 items
+        const numItems = Math.min(2, monster.loot.length);
+        const selectedItems = [];
+        
+        // Select unique items
+        const availableIndices = Array.from({ length: monster.loot.length }, (_, i) => i);
+        for (let i = 0; i < numItems; i++) {
+          const randomIndex = Math.floor(Math.random() * availableIndices.length);
+          const itemIndex = availableIndices[randomIndex];
+          availableIndices.splice(randomIndex, 1);
+          selectedItems.push(monster.loot[itemIndex]);
+        }
+        
+        // Add items to inventory
+        for (const lootItem of selectedItems) {
+          character.inventar.push(lootItem);
+          state.combatLog = [...state.combatLog, `Du findest ${lootItem.name}!`];
+        }
+        
+        // Special message for multiple items
+        if (selectedItems.length > 1) {
+          state.combatLog = [...state.combatLog, `Seltener Fund: ${selectedItems.length} Items erbeutet!`];
+        }
+      } else {
+        // Regular loot - one item
+        const lootIndex = Math.floor(Math.random() * monster.loot.length);
+        const lootItem = monster.loot[lootIndex];
+        character.inventar.push(lootItem);
+        
+        const lootMessage = monster.isBoss
+          ? `Seltener Fund: Du findest ${lootItem.name}!`
+          : `Du findest ${lootItem.name}!`;
+          
+        state.combatLog = [...state.combatLog, lootMessage];
+      }
+    }
   }
   
   // Check for quest progress

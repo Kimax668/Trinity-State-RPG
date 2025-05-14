@@ -4,6 +4,7 @@ import { useGameContext } from '../context/GameContext';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 const CombatScreen: React.FC = () => {
   const { state, dispatch } = useGameContext();
@@ -16,13 +17,15 @@ const CombatScreen: React.FC = () => {
   return (
     <div className="min-h-screen bg-black bg-opacity-70 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
-        <Card className="parchment border-2 border-rpg-primary">
+        <Card className={`parchment border-2 ${currentMonster.isBoss ? "border-red-600 shadow-lg shadow-red-500/20" : "border-rpg-primary"}`}>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Combat Info & Log */}
               <div className="space-y-4">
                 <div className="text-center mb-4">
-                  <h2 className="text-2xl font-bold text-rpg-accent">Kampf!</h2>
+                  <h2 className="text-2xl font-bold text-rpg-accent">
+                    {currentMonster.isBoss ? "Boss Kampf!" : "Kampf!"}
+                  </h2>
                 </div>
                 
                 {/* Combat status */}
@@ -30,7 +33,14 @@ const CombatScreen: React.FC = () => {
                   {/* Monster stats */}
                   <div>
                     <div className="flex justify-between items-center">
-                      <h3 className="font-bold text-lg">{currentMonster.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className={`font-bold text-lg ${currentMonster.isBoss ? 'text-red-600' : ''}`}>
+                          {currentMonster.name}
+                        </h3>
+                        {currentMonster.isBoss && (
+                          <Badge className="bg-red-600 text-white">Boss</Badge>
+                        )}
+                      </div>
                       <div className="text-sm">
                         HP: {currentMonster.hp}/{currentMonster.max_hp}
                       </div>
@@ -38,7 +48,7 @@ const CombatScreen: React.FC = () => {
                     
                     <div className="mt-1 health-bar">
                       <div 
-                        className="health-bar-fill" 
+                        className={`health-bar-fill ${currentMonster.isBoss ? 'bg-red-600' : ''}`}
                         style={{ 
                           width: `${Math.max(0, (currentMonster.hp / currentMonster.max_hp) * 100)}%` 
                         }}
@@ -70,7 +80,7 @@ const CombatScreen: React.FC = () => {
                   <ScrollArea className="h-[120px] rounded border p-2 bg-white bg-opacity-70">
                     <div className="space-y-2">
                       {combatLog.map((log, index) => (
-                        <div key={index} className="text-sm">
+                        <div key={index} className={`text-sm ${log.includes('Boss') || log.includes('Selten') ? 'font-semibold text-red-600' : ''}`}>
                           {log}
                         </div>
                       ))}

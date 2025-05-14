@@ -1,4 +1,3 @@
-
 export interface Item {
   name: string;
   beschreibung: string;
@@ -17,6 +16,8 @@ export interface Monster {
   xp: number;
   wahrscheinlichkeit: number;
   faehigkeiten: string[];
+  isBoss?: boolean;
+  lootChance?: number;
 }
 
 export interface Quest {
