@@ -1,3 +1,4 @@
+
 export interface Item {
   name: string;
   beschreibung: string;
@@ -39,6 +40,13 @@ export interface NPC {
   handel: Item[];
 }
 
+export interface Equipment {
+  waffe: Item | null;
+  ruestung: Item | null;
+  helm: Item | null;
+  accessoire: Item | null;
+}
+
 export interface Character {
   name: string;
   hp: number;
@@ -50,7 +58,7 @@ export interface Character {
   level: number;
   gold: number;
   inventar: Item[];
-  ausgeruestet: Item | null;
+  ausgeruestet: Equipment;
   zauber: string[];
   aktueller_ort: string;
   quest_log: Quest[];

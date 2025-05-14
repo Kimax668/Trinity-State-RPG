@@ -1,8 +1,16 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Character, GameAction, GameState, Item, Monster, Quest } from '../types/game';
+import { Character, GameAction, GameState, Item, Monster, Quest, Equipment } from '../types/game';
 import { items, monster_templates, npcs, orte, standard_quests } from '../data/gameData';
+
+// Initial equipment state
+const initialEquipment: Equipment = {
+  waffe: null,
+  ruestung: null,
+  helm: null,
+  accessoire: null
+};
 
 // Initial character state
 const createInitialCharacter = (name: string): Character => ({
@@ -16,7 +24,7 @@ const createInitialCharacter = (name: string): Character => ({
   level: 1,
   gold: 50,
   inventar: [],
-  ausgeruestet: null,
+  ausgeruestet: initialEquipment,
   zauber: [],
   aktueller_ort: "Stadt",
   quest_log: []
@@ -34,6 +42,26 @@ const initialState: GameState = {
   combatLog: [],
   gameScreen: 'start', // 'start', 'main', 'combat', 'shop', etc.
   loadedCharacters: []
+};
+
+// Get total bonus from all equipped items
+const getTotalBonus = (equipment: Equipment, bonusName: string): number => {
+  let totalBonus = 0;
+  
+  if (equipment.waffe && equipment.waffe.boni[bonusName]) {
+    totalBonus += equipment.waffe.boni[bonusName];
+  }
+  if (equipment.ruestung && equipment.ruestung.boni[bonusName]) {
+    totalBonus += equipment.ruestung.boni[bonusName];
+  }
+  if (equipment.helm && equipment.helm.boni[bonusName]) {
+    totalBonus += equipment.helm.boni[bonusName];
+  }
+  if (equipment.accessoire && equipment.accessoire.boni[bonusName]) {
+    totalBonus += equipment.accessoire.boni[bonusName];
+  }
+  
+  return totalBonus;
 };
 
 // Game reducer
@@ -123,11 +151,9 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       const { character } = newState;
       const monster = { ...newState.currentMonster };
       
-      // Calculate player damage
+      // Calculate player damage with bonuses from all equipment
       let damage = character.staerke;
-      if (character.ausgeruestet) {
-        damage += character.ausgeruestet.boni.staerke || 0;
-      }
+      damage += getTotalBonus(character.ausgeruestet, 'staerke');
       
       monster.hp = Math.max(0, monster.hp - damage);
       newState.combatLog = [...newState.combatLog, `Du greifst an und machst ${damage} Schaden!`];
@@ -148,8 +174,10 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       const { character } = newState;
       const monster = { ...newState.currentMonster };
       
-      // Calculate spell damage
-      const damage = character.intelligenz * 1.5;
+      // Calculate spell damage with bonuses from all equipment
+      let baseDamage = character.intelligenz * 1.5;
+      let intelligenzBonus = getTotalBonus(character.ausgeruestet, 'intelligenz');
+      let damage = baseDamage + (intelligenzBonus * 1.5); // Intelligenz bonus affects spells more
       
       monster.hp = Math.max(0, monster.hp - damage);
       newState.combatLog = [...newState.combatLog, `Du wirkst ${action.spell} und verursachst ${damage} Schaden!`];
@@ -230,7 +258,30 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 
     case 'EQUIP_ITEM': {
       const newState = { ...state };
-      newState.character.ausgeruestet = action.item;
+      const item = action.item;
+      const equipment = {...newState.character.ausgeruestet};
+      
+      // Assign item to the correct equipment slot based on its type
+      switch(item.typ) {
+        case 'waffe':
+          equipment.waffe = item;
+          break;
+        case 'ruestung':
+          equipment.ruestung = item;
+          break;
+        case 'helm':
+          equipment.helm = item;
+          break;
+        case 'accessoire':
+          equipment.accessoire = item;
+          break;
+        default:
+          toast.error(`Kann nicht ausgerüstet werden: ${item.typ}`);
+          return newState;
+      }
+      
+      newState.character.ausgeruestet = equipment;
+      toast.success(`${item.name} ausgerüstet!`);
       return newState;
     }
 
@@ -257,9 +308,16 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         const droppedItem = character.inventar[action.itemIndex];
         character.inventar.splice(action.itemIndex, 1);
         
-        // If dropped equipped item, unequip it
-        if (character.ausgeruestet === droppedItem) {
-          character.ausgeruestet = null;
+        // Check if the dropped item is equipped, and unequip it if so
+        const equipment = character.ausgeruestet;
+        if (equipment.waffe === droppedItem) {
+          equipment.waffe = null;
+        } else if (equipment.ruestung === droppedItem) {
+          equipment.ruestung = null;
+        } else if (equipment.helm === droppedItem) {
+          equipment.helm = null;
+        } else if (equipment.accessoire === droppedItem) {
+          equipment.accessoire = null;
         }
         
         toast.info(`${droppedItem.name} weggeworfen`);
@@ -315,7 +373,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         combatLog: [...state.combatLog, action.message]
       };
 
-    case 'SAVE_GAME':
+    case 'SAVE_GAME': {
       const saveData = {
         name: state.character.name,
         hp: state.character.hp,
@@ -340,6 +398,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         loadedCharacters: [...new Set([...state.loadedCharacters, state.character.name])]
       };
+    }
 
     default:
       return state;
@@ -350,17 +409,26 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 const handleMonsterAttack = (state: GameState, monster: Monster): GameState => {
   const { character } = state;
   
-  // Check if player dodges
-  if (Math.random() * 100 <= character.ausweichen) {
+  // Apply dodge chance with bonus from all equipment
+  const ausweichenBonus = getTotalBonus(character.ausgeruestet, 'ausweichen');
+  const totalAusweichen = character.ausweichen + ausweichenBonus;
+  
+  if (Math.random() * 100 <= totalAusweichen) {
     state.combatLog = [...state.combatLog, "Du weichst dem Angriff aus!"];
     state.currentMonster = monster;
     return state;
   }
   
+  // Calculate damage reduction from armor
+  const verteidigungBonus = getTotalBonus(character.ausgeruestet, 'verteidigung');
+  
   // Bosses deal more damage
-  const damage = monster.isBoss 
+  let damage = monster.isBoss 
     ? monster.staerke + Math.floor(Math.random() * 5) // Bosses have variable damage
     : monster.staerke;
+  
+  // Apply damage reduction
+  damage = Math.max(1, damage - Math.floor(verteidigungBonus / 2));
     
   character.hp = Math.max(0, character.hp - damage);
   

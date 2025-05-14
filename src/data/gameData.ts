@@ -90,6 +90,50 @@ export const items: Record<string, Item> = {
     boni: {},
     preis: 15,
     typ: "material"
+  },
+  // Neue Helm-Items
+  "lederhelm": {
+    name: "Lederhelm",
+    beschreibung: "Einfacher Kopfschutz",
+    boni: {"verteidigung": 2},
+    preis: 20,
+    typ: "helm"
+  },
+  "eisenhelm": {
+    name: "Eisenhelm",
+    beschreibung: "Robuster Kopfschutz",
+    boni: {"verteidigung": 4},
+    preis: 40,
+    typ: "helm"
+  },
+  "magischer_helm": {
+    name: "Magischer Helm",
+    beschreibung: "Verstärkt magische Kräfte",
+    boni: {"intelligenz": 3, "verteidigung": 2},
+    preis: 65,
+    typ: "helm"
+  },
+  // Accessoires
+  "glücksanhänger": {
+    name: "Glücksanhänger",
+    beschreibung: "Bringt seinem Träger Glück",
+    boni: {"ausweichen": 3},
+    preis: 35,
+    typ: "accessoire"
+  },
+  "stärkering": {
+    name: "Stärkering",
+    beschreibung: "Verstärkt physische Kraft",
+    boni: {"staerke": 2},
+    preis: 45,
+    typ: "accessoire"
+  },
+  "magieamulett": {
+    name: "Magieamulett",
+    beschreibung: "Verstärkt magische Fähigkeiten",
+    boni: {"intelligenz": 2},
+    preis: 45,
+    typ: "accessoire"
   }
 };
 
@@ -286,9 +330,9 @@ export const npcs: Record<string, NPC> = {
     ort: "Stadt",
     dialog: {
       "gruss": "Was kann ich für dich schmieden?",
-      "handel": "Ich habe die besten Waffen."
+      "handel": "Ich habe die besten Waffen und Rüstungen."
     },
-    handel: [items["eisenschwert"], items["eisenruestung"]]
+    handel: [items["eisenschwert"], items["eisenruestung"], items["eisenhelm"]]
   },
   "Magier": {
     name: "Elara die Magierin",
@@ -297,7 +341,16 @@ export const npcs: Record<string, NPC> = {
       "gruss": "Suchst du arkanes Wissen?",
       "handel": "Diese magischen Gegenstände könnten dir helfen."
     },
-    handel: [items["flammenstab"], items["kristallstab"], items["zauberbuch"]]
+    handel: [items["flammenstab"], items["kristallstab"], items["zauberbuch"], items["magieamulett"]]
+  },
+  "Abenteurer": {
+    name: "Finn der Abenteurer",
+    ort: "Stadt",
+    dialog: {
+      "gruss": "Ah, ein Mitstreiter! Ich habe einige seltene Stücke auf meinen Reisen gefunden.",
+      "handel": "Interesse an etwas Besonderem?"
+    },
+    handel: [items["magischer_helm"], items["glücksanhänger"], items["stärkering"]]
   }
 };
 

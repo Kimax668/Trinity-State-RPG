@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Item } from '@/types/game';
 
 const InventoryUI: React.FC = () => {
   const { state, dispatch } = useGameContext();
@@ -22,7 +23,7 @@ const InventoryUI: React.FC = () => {
     
     if (item.typ === "verbrauchbar") {
       dispatch({ type: 'USE_INVENTORY_ITEM', itemIndex: index });
-    } else if (item.typ === "waffe" || item.typ === "ruestung") {
+    } else if (["waffe", "ruestung", "helm", "accessoire"].includes(item.typ)) {
       dispatch({ type: 'EQUIP_ITEM', item });
     }
     
@@ -32,6 +33,27 @@ const InventoryUI: React.FC = () => {
   const handleDropItem = (index: number) => {
     dispatch({ type: 'DROP_ITEM', itemIndex: index });
     setSelectedItemIndex(null);
+  };
+
+  const isItemEquipped = (item: Item): boolean => {
+    const { ausgeruestet } = character;
+    return (
+      ausgeruestet.waffe === item ||
+      ausgeruestet.ruestung === item ||
+      ausgeruestet.helm === item ||
+      ausgeruestet.accessoire === item
+    );
+  };
+
+  const getItemTypeLabel = (type: string): string => {
+    switch(type) {
+      case "waffe": return "Waffe";
+      case "ruestung": return "Rüstung";
+      case "helm": return "Helm";
+      case "accessoire": return "Accessoire";
+      case "verbrauchbar": return "Verbrauchbar";
+      default: return type;
+    }
   };
 
   return (
@@ -48,14 +70,19 @@ const InventoryUI: React.FC = () => {
             <div 
               key={index}
               className={`border rounded p-2 cursor-pointer hover:bg-white hover:bg-opacity-50 transition-all 
-                ${character.ausgeruestet === item ? 'border-rpg-primary bg-rpg-secondary bg-opacity-10' : 'border-gray-300'}`}
+                ${isItemEquipped(item) ? 'border-rpg-primary bg-rpg-secondary bg-opacity-10' : 'border-gray-300'}`}
               onClick={() => setSelectedItemIndex(index)}
             >
               <div className="flex justify-between">
                 <span className="font-medium">{item.name}</span>
-                {character.ausgeruestet === item && (
-                  <span className="text-xs bg-rpg-primary text-white px-1 rounded">Ausgerüstet</span>
-                )}
+                <div className="flex gap-1">
+                  <span className="text-xs bg-gray-200 text-gray-700 px-1 rounded">
+                    {getItemTypeLabel(item.typ)}
+                  </span>
+                  {isItemEquipped(item) && (
+                    <span className="text-xs bg-rpg-primary text-white px-1 rounded">Ausgerüstet</span>
+                  )}
+                </div>
               </div>
               <div className="text-xs text-gray-600">{item.beschreibung}</div>
             </div>
@@ -91,7 +118,7 @@ const InventoryUI: React.FC = () => {
               
               <div className="flex justify-between text-sm">
                 <span className="font-medium">Typ:</span>
-                <span>{character.inventar[selectedItemIndex]?.typ}</span>
+                <span>{getItemTypeLabel(character.inventar[selectedItemIndex]?.typ)}</span>
               </div>
             </div>
             
@@ -99,6 +126,7 @@ const InventoryUI: React.FC = () => {
               <Button 
                 onClick={() => handleUseItem(selectedItemIndex)}
                 className="rpg-button"
+                disabled={character.inventar[selectedItemIndex]?.typ === "material"}
               >
                 {character.inventar[selectedItemIndex]?.typ === "verbrauchbar" ? "Benutzen" : "Ausrüsten"}
               </Button>
