@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Item } from '@/types/game';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const InventoryUI: React.FC = () => {
   const { state, dispatch } = useGameContext();
@@ -35,6 +36,11 @@ const InventoryUI: React.FC = () => {
     setSelectedItemIndex(null);
   };
 
+  const handleSellItem = (index: number, npcName: string) => {
+    dispatch({ type: 'SELL_ITEM', itemIndex: index, npc: npcName });
+    setSelectedItemIndex(null);
+  };
+
   const isItemEquipped = (item: Item): boolean => {
     const { ausgeruestet } = character;
     return (
@@ -45,6 +51,11 @@ const InventoryUI: React.FC = () => {
     );
   };
 
+  // Get NPCs that can buy items from current location
+  const buyingNpcs = Object.values(state.npcs).filter(
+    npc => npc.ort === character.aktueller_ort && npc.kauft && npc.kauft.length > 0
+  );
+
   const getItemTypeLabel = (type: string): string => {
     switch(type) {
       case "waffe": return "Waffe";
@@ -54,6 +65,20 @@ const InventoryUI: React.FC = () => {
       case "verbrauchbar": return "Verbrauchbar";
       default: return type;
     }
+  };
+
+  const canSellItem = (item: Item): boolean => {
+    if (isItemEquipped(item)) return false;
+    if (item.verkaufbar === false) return false;
+    
+    // Check if any NPC at current location buys this type of item
+    return buyingNpcs.some(npc => 
+      npc.kauft && (npc.kauft.includes(item.typ) || npc.kauft.includes('*'))
+    );
+  };
+
+  const calculateSellPrice = (item: Item): number => {
+    return item.verkaufspreis || Math.floor(item.preis * 0.5); // Default to 50% of purchase price
   };
 
   return (
@@ -82,6 +107,9 @@ const InventoryUI: React.FC = () => {
                   {isItemEquipped(item) && (
                     <span className="text-xs bg-rpg-primary text-white px-1 rounded">Ausgerüstet</span>
                   )}
+                  {item.statusEffekt && (
+                    <span className="text-xs bg-purple-200 text-purple-800 px-1 rounded">{item.statusEffekt}</span>
+                  )}
                 </div>
               </div>
               <div className="text-xs text-gray-600">{item.beschreibung}</div>
@@ -101,26 +129,69 @@ const InventoryUI: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="py-4 space-y-2">
-              {Object.entries(character.inventar[selectedItemIndex]?.boni || {}).map(([key, value]) => (
-                <div key={key} className="flex justify-between text-sm">
-                  <span className="font-medium">{key}:</span>
-                  <span>+{value}</span>
-                </div>
-              ))}
+            <Tabs defaultValue="details">
+              <TabsList className="w-full">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                {canSellItem(character.inventar[selectedItemIndex]) && (
+                  <TabsTrigger value="sell">Verkaufen</TabsTrigger>
+                )}
+              </TabsList>
               
-              {character.inventar[selectedItemIndex]?.faehigkeit && (
+              <TabsContent value="details" className="py-4 space-y-2">
+                {Object.entries(character.inventar[selectedItemIndex]?.boni || {}).map(([key, value]) => (
+                  <div key={key} className="flex justify-between text-sm">
+                    <span className="font-medium">{key}:</span>
+                    <span>+{value}</span>
+                  </div>
+                ))}
+                
+                {character.inventar[selectedItemIndex]?.faehigkeit && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">Fähigkeit:</span>
+                    <span>{character.inventar[selectedItemIndex]?.faehigkeit}</span>
+                  </div>
+                )}
+
+                {character.inventar[selectedItemIndex]?.statusEffekt && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">Status Effekt:</span>
+                    <span>{character.inventar[selectedItemIndex]?.statusEffekt} ({character.inventar[selectedItemIndex]?.statusDauer} Runden)</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between text-sm">
-                  <span className="font-medium">Fähigkeit:</span>
-                  <span>{character.inventar[selectedItemIndex]?.faehigkeit}</span>
+                  <span className="font-medium">Typ:</span>
+                  <span>{getItemTypeLabel(character.inventar[selectedItemIndex]?.typ)}</span>
                 </div>
-              )}
+
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">Wert:</span>
+                  <span>{character.inventar[selectedItemIndex]?.preis} Gold</span>
+                </div>
+              </TabsContent>
               
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">Typ:</span>
-                <span>{getItemTypeLabel(character.inventar[selectedItemIndex]?.typ)}</span>
-              </div>
-            </div>
+              {canSellItem(character.inventar[selectedItemIndex]) && (
+                <TabsContent value="sell" className="py-4 space-y-4">
+                  <div className="text-center mb-2">
+                    <div className="font-medium">Verkaufspreis:</div>
+                    <div className="text-xl text-yellow-600">{calculateSellPrice(character.inventar[selectedItemIndex])} Gold</div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Verkaufen an:</div>
+                    {buyingNpcs.map((npc, idx) => (
+                      <Button 
+                        key={idx} 
+                        className="w-full" 
+                        onClick={() => handleSellItem(selectedItemIndex, npc.name)}
+                      >
+                        {npc.name}
+                      </Button>
+                    ))}
+                  </div>
+                </TabsContent>
+              )}
+            </Tabs>
             
             <DialogFooter className="flex justify-between">
               <Button 

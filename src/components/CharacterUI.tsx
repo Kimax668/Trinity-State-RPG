@@ -54,27 +54,80 @@ const CharacterUI: React.FC = () => {
     );
   };
 
+  // Show unallocated stat points if available
+  const showStatPoints = character.unverteilte_punkte > 0;
+
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-xl font-bold mb-2 border-b-2 border-rpg-secondary pb-1">Charakterstatus</h2>
       
       <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="flex items-center">
-          <span className="text-rpg-accent font-medium w-24">Stärke:</span>
-          <span>{character.staerke}</span>
+        <div className="flex items-center justify-between">
+          <span className="text-rpg-accent font-medium">Stärke:</span>
+          <div className="flex items-center">
+            <span>{character.staerke}</span>
+            {showStatPoints && (
+              <button 
+                className="ml-2 bg-rpg-accent text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                onClick={() => state.dispatch({ type: 'ASSIGN_STAT_POINT', attribute: 'staerke' })}
+              >
+                +
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-rpg-accent font-medium">Intelligenz:</span>
+          <div className="flex items-center">
+            <span>{character.intelligenz}</span>
+            {showStatPoints && (
+              <button 
+                className="ml-2 bg-rpg-accent text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                onClick={() => state.dispatch({ type: 'ASSIGN_STAT_POINT', attribute: 'intelligenz' })}
+              >
+                +
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-rpg-accent font-medium">Ausweichen:</span>
+          <div className="flex items-center">
+            <span>{character.ausweichen}%</span>
+            {showStatPoints && (
+              <button 
+                className="ml-2 bg-rpg-accent text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                onClick={() => state.dispatch({ type: 'ASSIGN_STAT_POINT', attribute: 'ausweichen' })}
+              >
+                +
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-rpg-accent font-medium">Verteidigung:</span>
+          <div className="flex items-center">
+            <span>{character.verteidigung}</span>
+            {showStatPoints && (
+              <button 
+                className="ml-2 bg-rpg-accent text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                onClick={() => state.dispatch({ type: 'ASSIGN_STAT_POINT', attribute: 'verteidigung' })}
+              >
+                +
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex items-center">
-          <span className="text-rpg-accent font-medium w-24">Intelligenz:</span>
-          <span>{character.intelligenz}</span>
+          <span className="text-rpg-accent font-medium">Level:</span>
+          <span className="ml-2">{character.level}</span>
         </div>
-        <div className="flex items-center">
-          <span className="text-rpg-accent font-medium w-24">Ausweichen:</span>
-          <span>{character.ausweichen}%</span>
-        </div>
-        <div className="flex items-center">
-          <span className="text-rpg-accent font-medium w-24">Level:</span>
-          <span>{character.level}</span>
-        </div>
+        {showStatPoints && (
+          <div className="flex items-center text-green-600 font-semibold">
+            <span>Freie Punkte:</span>
+            <span className="ml-2">{character.unverteilte_punkte}</span>
+          </div>
+        )}
       </div>
 
       <div className="mt-2">
@@ -91,14 +144,21 @@ const CharacterUI: React.FC = () => {
         <div className="mt-2">
           <h3 className="font-semibold text-rpg-primary border-b border-rpg-secondary pb-1">Zauber</h3>
           <div className="flex flex-wrap gap-1 mt-2">
-            {character.zauber.map((zauber, index) => (
-              <span 
-                key={index} 
-                className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm"
-              >
-                {zauber}
-              </span>
-            ))}
+            {character.zauber.map((zauber, index) => {
+              const zauberDef = state.zauberDefinitionen[zauber];
+              return (
+                <div 
+                  key={index} 
+                  className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm"
+                  title={zauberDef?.beschreibung || ""}
+                >
+                  {zauber}
+                  {zauberDef?.statusEffekt && (
+                    <span className="ml-1 text-xs">({zauberDef.statusEffekt})</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

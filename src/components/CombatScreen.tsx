@@ -14,6 +14,30 @@ const CombatScreen: React.FC = () => {
     return null;
   }
 
+  // Helper to get status effect badges
+  const renderStatusEffects = (effects?: { name: string; dauer: number }[]) => {
+    if (!effects || effects.length === 0) return null;
+    
+    return (
+      <div className="flex gap-1 mt-1">
+        {effects.map((effect, idx) => {
+          let badgeColor = "bg-gray-500";
+          
+          if (effect.name === "Brennen") badgeColor = "bg-red-500";
+          else if (effect.name === "Gefroren") badgeColor = "bg-blue-500";
+          else if (effect.name === "Betäubt") badgeColor = "bg-yellow-500";
+          else if (effect.name === "Vergiftet") badgeColor = "bg-green-500";
+          
+          return (
+            <Badge key={idx} className={`${badgeColor} text-white text-xs`}>
+              {effect.name} ({effect.dauer})
+            </Badge>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-black bg-opacity-70 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
@@ -54,6 +78,16 @@ const CombatScreen: React.FC = () => {
                         }}
                       />
                     </div>
+                    
+                    {renderStatusEffects(currentMonster.statusEffekte)}
+                    
+                    <div className="mt-1 text-xs">
+                      {currentMonster.verteidigung && (
+                        <span className="inline-block bg-gray-100 px-1 rounded mr-2">
+                          Verteidigung: {currentMonster.verteidigung}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
                   {/* Character stats */}
@@ -71,6 +105,20 @@ const CombatScreen: React.FC = () => {
                         style={{ width: `${(character.hp / character.max_hp) * 100}%` }}
                       />
                     </div>
+                    
+                    {renderStatusEffects(character.statusEffekte)}
+                    
+                    <div className="mt-1 text-xs">
+                      <span className="inline-block bg-gray-100 px-1 rounded mr-2">
+                        Stärke: {character.staerke}
+                      </span>
+                      <span className="inline-block bg-gray-100 px-1 rounded mr-2">
+                        Verteidigung: {character.verteidigung}
+                      </span>
+                      <span className="inline-block bg-gray-100 px-1 rounded">
+                        Ausweichen: {character.ausweichen}%
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -80,7 +128,7 @@ const CombatScreen: React.FC = () => {
                   <ScrollArea className="h-[120px] rounded border p-2 bg-white bg-opacity-70">
                     <div className="space-y-2">
                       {combatLog.map((log, index) => (
-                        <div key={index} className={`text-sm ${log.includes('Boss') || log.includes('Selten') ? 'font-semibold text-red-600' : ''}`}>
+                        <div key={index} className={`text-sm ${log.includes('Boss') || log.includes('Selten') || log.includes('Kritisch') ? 'font-semibold text-red-600' : ''}`}>
                           {log}
                         </div>
                       ))}
@@ -105,15 +153,24 @@ const CombatScreen: React.FC = () => {
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium">Zauber:</h4>
                       <div className="grid grid-cols-2 gap-2">
-                        {character.zauber.map((spell, index) => (
-                          <Button 
-                            key={index} 
-                            className="rpg-button bg-blue-700 hover:bg-blue-800"
-                            onClick={() => dispatch({ type: 'CAST_SPELL', spell })}
-                          >
-                            {spell}
-                          </Button>
-                        ))}
+                        {character.zauber.map((spell, index) => {
+                          const spellDef = state.zauberDefinitionen[spell];
+                          return (
+                            <Button 
+                              key={index} 
+                              className={`rpg-button text-sm py-1 ${
+                                spellDef?.statusEffekt === 'Brennen' ? 'bg-red-700 hover:bg-red-800' :
+                                spellDef?.statusEffekt === 'Gefroren' ? 'bg-blue-700 hover:bg-blue-800' :
+                                spellDef?.statusEffekt === 'Betäubt' ? 'bg-yellow-700 hover:bg-yellow-800' :
+                                'bg-blue-700 hover:bg-blue-800'
+                              }`}
+                              title={spellDef?.beschreibung || ""}
+                              onClick={() => dispatch({ type: 'CAST_SPELL', spell })}
+                            >
+                              {spell}
+                            </Button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -127,7 +184,13 @@ const CombatScreen: React.FC = () => {
                           .map((item, index) => (
                             <Button 
                               key={index} 
-                              className="rpg-button bg-green-700 hover:bg-green-800"
+                              className={`rpg-button text-sm py-1 ${
+                                item.statusEffekt === 'Brennen' ? 'bg-red-700 hover:bg-red-800' :
+                                item.statusEffekt === 'Gefroren' ? 'bg-blue-700 hover:bg-blue-800' :
+                                item.statusEffekt === 'Betäubt' ? 'bg-yellow-700 hover:bg-yellow-800' :
+                                'bg-green-700 hover:bg-green-800'
+                              }`}
+                              title={item.beschreibung || ""}
                               onClick={() => {
                                 const itemIndex = character.inventar.findIndex(i => i === item);
                                 if (itemIndex !== -1) {

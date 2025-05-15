@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Character, GameAction, GameState, Item, Monster, Quest, Equipment } from '../types/game';
 import { items, monster_templates, npcs, orte, standard_quests } from '../data/gameData';
+import zauberDefinitionen from '../data/zauberData';
 
 // Initial equipment state
 const initialEquipment: Equipment = {
@@ -20,6 +20,7 @@ const createInitialCharacter = (name: string): Character => ({
   staerke: 10,
   intelligenz: 10,
   ausweichen: 5,
+  verteidigung: 0,     // New defense stat
   xp: 0,
   level: 1,
   gold: 50,
@@ -27,7 +28,8 @@ const createInitialCharacter = (name: string): Character => ({
   ausgeruestet: initialEquipment,
   zauber: [],
   aktueller_ort: "Stadt",
-  quest_log: []
+  quest_log: [],
+  unverteilte_punkte: 0 // Unassigned stat points
 });
 
 // Initial game state
@@ -41,7 +43,8 @@ const initialState: GameState = {
   currentMonster: null,
   combatLog: [],
   gameScreen: 'start', // 'start', 'main', 'combat', 'shop', etc.
-  loadedCharacters: []
+  loadedCharacters: [],
+  zauberDefinitionen // Add spell definitions
 };
 
 // Get total bonus from all equipped items
@@ -62,6 +65,80 @@ const getTotalBonus = (equipment: Equipment, bonusName: string): number => {
   }
   
   return totalBonus;
+};
+
+// Process status effects
+const processStatusEffects = (entity: Monster | Character, combatLog: string[]): [Monster | Character, string[]] => {
+  if (!entity.statusEffekte || entity.statusEffekte.length === 0) return [entity, combatLog];
+  
+  const updatedEntity = { ...entity };
+  const newLog = [...combatLog];
+  const remainingEffects = [];
+  
+  for (const effect of updatedEntity.statusEffekte) {
+    effect.dauer -= 1;
+    
+    if (effect.dauer > 0) {
+      // Apply effect damage if there's any
+      if (effect.schaden) {
+        updatedEntity.hp = Math.max(0, updatedEntity.hp - effect.schaden);
+        
+        switch (effect.name) {
+          case "Brennen":
+            newLog.push(`${entity.name} erleidet ${effect.schaden} Schaden durch Verbrennung.`);
+            break;
+          case "Gefroren":
+            newLog.push(`${entity.name} erleidet ${effect.schaden} Schaden durch Frost.`);
+            break;
+          default:
+            newLog.push(`${entity.name} erleidet ${effect.schaden} Schaden durch ${effect.name}.`);
+        }
+      }
+      
+      // Keep the effect active
+      remainingEffects.push(effect);
+    } else {
+      newLog.push(`${effect.name} endet bei ${entity.name}.`);
+    }
+  }
+  
+  updatedEntity.statusEffekte = remainingEffects;
+  return [updatedEntity, newLog];
+};
+
+// Apply a status effect to an entity
+const applyStatusEffect = (
+  entity: Monster | Character, 
+  effectName: string, 
+  duration: number, 
+  damage: number = 0
+): Monster | Character => {
+  const updatedEntity = { ...entity };
+  
+  if (!updatedEntity.statusEffekte) {
+    updatedEntity.statusEffekte = [];
+  }
+  
+  // Check if effect already exists
+  const existingEffectIndex = updatedEntity.statusEffekte.findIndex(e => e.name === effectName);
+  
+  if (existingEffectIndex >= 0) {
+    // Refresh duration if the effect already exists
+    updatedEntity.statusEffekte[existingEffectIndex].dauer = Math.max(
+      updatedEntity.statusEffekte[existingEffectIndex].dauer,
+      duration
+    );
+    updatedEntity.statusEffekte[existingEffectIndex].schaden = damage;
+  } else {
+    // Add new effect
+    updatedEntity.statusEffekte.push({
+      name: effectName,
+      dauer: duration,
+      schaden: damage
+    });
+  }
+  
+  return updatedEntity;
 };
 
 // Game reducer
@@ -117,10 +194,16 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             monster.hp = Math.floor(monster.max_hp * 1.5);
             monster.max_hp = monster.hp;
             monster.staerke = Math.floor(monster.staerke * 1.5);
+            monster.verteidigung = monster.verteidigung 
+              ? Math.floor(monster.verteidigung * 1.2) 
+              : Math.floor(monster.staerke * 0.3); // Default defense
             monster.xp = Math.floor(monster.xp * 2);
             monster.lootChance = 0.8; // 80% loot chance for bosses
           } else {
             monster.lootChance = monster.lootChance || 0.3; // Default 30% loot chance
+            if (!monster.verteidigung) {
+              monster.verteidigung = Math.floor(monster.staerke * 0.2); // Default defense for regular monsters
+            }
           }
           
           newState.currentMonster = monster;
@@ -149,22 +232,91 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       const newState = { ...state };
       const { character } = newState;
-      const monster = { ...newState.currentMonster };
+      let monster = { ...newState.currentMonster };
+      
+      // Check for status effects on character first
+      const [updatedCharacter, characterStatusLog] = processStatusEffects(character, []);
+      newState.character = updatedCharacter as Character;
+      newState.combatLog = [...newState.combatLog, ...characterStatusLog];
+      
+      // Check for "Betäubt" status on monster which prevents it from attacking this turn
+      const monsterStunned = monster.statusEffekte?.some(effect => 
+        effect.name === "Betäubt" && effect.dauer > 0
+      );
       
       // Calculate player damage with bonuses from all equipment
       let damage = character.staerke;
       damage += getTotalBonus(character.ausgeruestet, 'staerke');
       
-      monster.hp = Math.max(0, monster.hp - damage);
-      newState.combatLog = [...newState.combatLog, `Du greifst an und machst ${damage} Schaden!`];
+      // Critical hit chance (10% base + intelligence bonus)
+      const critChance = 0.1 + ((character.intelligenz - 10) * 0.01);
+      let isCriticalHit = Math.random() < critChance;
+      
+      // Life steal chance from weapon
+      let lifeStealAmount = 0;
+      const weapon = character.ausgeruestet.waffe;
+      if (weapon && weapon.faehigkeit === "lebensraub") {
+        lifeStealAmount = Math.floor(damage * 0.2); // 20% life steal
+      }
+      
+      // Apply critical hit
+      if (isCriticalHit) {
+        damage = Math.floor(damage * 1.5);
+        newState.combatLog = [...newState.combatLog, `Kritischer Treffer! +50% Schaden!`];
+      }
+      
+      // Apply monster defense
+      const monsterDefense = monster.verteidigung || 0;
+      const finalDamage = Math.max(1, damage - monsterDefense);
+      
+      monster.hp = Math.max(0, monster.hp - finalDamage);
+      newState.combatLog = [
+        ...newState.combatLog, 
+        `Du greifst an und machst ${finalDamage} Schaden!`
+      ];
+      
+      // Apply life steal if available
+      if (lifeStealAmount > 0) {
+        character.hp = Math.min(character.max_hp, character.hp + lifeStealAmount);
+        newState.combatLog = [...newState.combatLog, `Du stiehlst ${lifeStealAmount} Lebenspunkte!`];
+      }
+      
+      // Add status effects from weapons
+      if (weapon && weapon.statusEffekt) {
+        monster = applyStatusEffect(
+          monster, 
+          weapon.statusEffekt, 
+          weapon.statusDauer || 3, 
+          weapon.boni.statusSchaden || Math.floor(damage * 0.2)
+        ) as Monster;
+        
+        newState.combatLog = [
+          ...newState.combatLog, 
+          `${monster.name} leidet unter ${weapon.statusEffekt}!`
+        ];
+      }
+      
+      // Process status effects on monster
+      const [updatedMonster, monsterStatusLog] = processStatusEffects(monster, []);
+      monster = updatedMonster as Monster;
+      newState.combatLog = [...newState.combatLog, ...monsterStatusLog];
+      newState.currentMonster = monster;
       
       // Check if monster is defeated
       if (monster.hp <= 0) {
         return handleCombatVictory(newState, monster);
       }
       
-      // Monster attacks back
-      return handleMonsterAttack(newState, monster);
+      // Monster attacks back if not stunned
+      if (!monsterStunned) {
+        return handleMonsterAttack(newState, monster);
+      } else {
+        newState.combatLog = [
+          ...newState.combatLog, 
+          `${monster.name} ist betäubt und kann nicht angreifen!`
+        ];
+        return newState;
+      }
     }
 
     case 'CAST_SPELL': {
@@ -172,23 +324,103 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       const newState = { ...state };
       const { character } = newState;
-      const monster = { ...newState.currentMonster };
+      let monster = { ...newState.currentMonster };
+      const spellName = action.spell;
+      const spellDef = state.zauberDefinitionen[spellName];
       
-      // Calculate spell damage with bonuses from all equipment
-      let baseDamage = character.intelligenz * 1.5;
-      let intelligenzBonus = getTotalBonus(character.ausgeruestet, 'intelligenz');
-      let damage = baseDamage + (intelligenzBonus * 1.5); // Intelligenz bonus affects spells more
+      if (!spellDef) {
+        newState.combatLog = [
+          ...newState.combatLog, 
+          `Fehler: Zauber ${spellName} nicht gefunden!`
+        ];
+        return newState;
+      }
       
-      monster.hp = Math.max(0, monster.hp - damage);
-      newState.combatLog = [...newState.combatLog, `Du wirkst ${action.spell} und verursachst ${damage} Schaden!`];
+      // Check for status effects on character first
+      const [updatedCharacter, characterStatusLog] = processStatusEffects(character, []);
+      newState.character = updatedCharacter as Character;
+      newState.combatLog = [...newState.combatLog, ...characterStatusLog];
+      
+      // Calculate spell effects
+      if (spellDef.schaden) {
+        // Calculate damage based on intelligence
+        let damage = spellDef.schaden;
+        if (spellDef.schadenFaktor) {
+          damage += Math.floor(character.intelligenz * spellDef.schadenFaktor);
+        }
+        
+        // Add bonus from equipment
+        damage += getTotalBonus(character.ausgeruestet, 'intelligenz');
+        
+        // Apply monster defense (but less effective against magic)
+        const monsterDefense = monster.verteidigung || 0;
+        const defenseVsMagic = Math.floor(monsterDefense * 0.6); // 60% effective against magic
+        const finalDamage = Math.max(1, damage - defenseVsMagic);
+        
+        monster.hp = Math.max(0, monster.hp - finalDamage);
+        newState.combatLog = [
+          ...newState.combatLog, 
+          `Du wirkst ${spellName} und verursachst ${finalDamage} Schaden!`
+        ];
+      }
+      
+      // Apply healing if spell has healing
+      if (spellDef.heilung) {
+        let healing = spellDef.heilung;
+        if (spellDef.heilungFaktor) {
+          healing += Math.floor(character.intelligenz * spellDef.heilungFaktor);
+        }
+        
+        character.hp = Math.min(character.max_hp, character.hp + healing);
+        newState.combatLog = [
+          ...newState.combatLog, 
+          `Du regenerierst ${healing} Lebenspunkte durch ${spellName}!`
+        ];
+      }
+      
+      // Apply status effects if the spell has any
+      if (spellDef.statusEffekt) {
+        const effectDamage = Math.floor((character.intelligenz * 0.25) + (spellDef.schaden || 0) * 0.3);
+        
+        monster = applyStatusEffect(
+          monster,
+          spellDef.statusEffekt,
+          spellDef.statusDauer || 2,
+          effectDamage
+        ) as Monster;
+        
+        newState.combatLog = [
+          ...newState.combatLog, 
+          `${monster.name} leidet unter ${spellDef.statusEffekt}!`
+        ];
+      }
+      
+      // Process status effects on monster
+      const [updatedMonster, monsterStatusLog] = processStatusEffects(monster, []);
+      monster = updatedMonster as Monster;
+      newState.combatLog = [...newState.combatLog, ...monsterStatusLog];
+      newState.currentMonster = monster;
       
       // Check if monster is defeated
       if (monster.hp <= 0) {
         return handleCombatVictory(newState, monster);
       }
       
-      // Monster attacks back
-      return handleMonsterAttack(newState, monster);
+      // Check for "Betäubt" status on monster which prevents it from attacking this turn
+      const monsterStunned = monster.statusEffekte?.some(effect => 
+        effect.name === "Betäubt" && effect.dauer > 0
+      );
+      
+      // Monster attacks back if not stunned
+      if (!monsterStunned) {
+        return handleMonsterAttack(newState, monster);
+      } else {
+        newState.combatLog = [
+          ...newState.combatLog, 
+          `${monster.name} ist betäubt und kann nicht angreifen!`
+        ];
+        return newState;
+      }
     }
 
     case 'USE_ITEM': {
@@ -204,11 +436,39 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
           
           newState.combatLog = [...newState.combatLog, `Du wurdest um ${healAmount} HP geheilt!`];
         }
+        
+        // Apply status effects if the item has any
+        if (item.statusEffekt && newState.currentMonster) {
+          const effectDamage = item.boni.statusSchaden || 5;
+          newState.currentMonster = applyStatusEffect(
+            newState.currentMonster,
+            item.statusEffekt,
+            item.statusDauer || 2,
+            effectDamage
+          ) as Monster;
+          
+          newState.combatLog = [
+            ...newState.combatLog, 
+            `${newState.currentMonster.name} leidet unter ${item.statusEffekt}!`
+          ];
+        }
       }
       
       // If in combat, monster attacks
       if (newState.currentMonster && newState.currentMonster.hp > 0) {
-        return handleMonsterAttack(newState, newState.currentMonster);
+        // Check for "Betäubt" status on monster which prevents it from attacking this turn
+        const monsterStunned = newState.currentMonster.statusEffekte?.some(effect => 
+          effect.name === "Betäubt" && effect.dauer > 0
+        );
+        
+        if (!monsterStunned) {
+          return handleMonsterAttack(newState, newState.currentMonster);
+        } else {
+          newState.combatLog = [
+            ...newState.combatLog, 
+            `${newState.currentMonster.name} ist betäubt und kann nicht angreifen!`
+          ];
+        }
       }
       
       return newState;
@@ -256,6 +516,39 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return newState;
     }
 
+    case 'SELL_ITEM': {
+      const newState = { ...state };
+      const { character } = newState;
+      const item = character.inventar[action.itemIndex];
+      
+      // Check if item is not equipped
+      if (isItemEquipped(item, character.ausgeruestet)) {
+        toast.error("Du kannst ausgerüstete Items nicht verkaufen!");
+        return newState;
+      }
+      
+      // Find NPC
+      const npc = Object.values(newState.npcs).find(n => n.name === action.npc);
+      if (!npc) {
+        toast.error("Händler nicht gefunden!");
+        return newState;
+      }
+      
+      // Check if NPC buys this type of item
+      if (!npc.kauft || (!npc.kauft.includes(item.typ) && !npc.kauft.includes('*'))) {
+        toast.error(`${npc.name} kauft keine ${item.typ} Items!`);
+        return newState;
+      }
+      
+      // Calculate sell price (50% of buy price by default)
+      const sellPrice = item.verkaufspreis || Math.floor(item.preis * 0.5);
+      character.gold += sellPrice;
+      character.inventar.splice(action.itemIndex, 1);
+      
+      toast.success(`${item.name} für ${sellPrice} Gold verkauft!`);
+      return newState;
+    }
+
     case 'EQUIP_ITEM': {
       const newState = { ...state };
       const item = action.item;
@@ -290,11 +583,13 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       const { character } = newState;
       const item = character.inventar[action.itemIndex];
       
-      if (item && item.typ === "verbrauchbar" && item.boni.heilung) {
-        const healAmount = item.boni.heilung;
-        character.hp = Math.min(character.hp + healAmount, character.max_hp);
-        character.inventar.splice(action.itemIndex, 1);
-        toast.success(`Du wurdest um ${healAmount} HP geheilt!`);
+      if (item && item.typ === "verbrauchbar") {
+        if (item.boni.heilung) {
+          const healAmount = item.boni.heilung;
+          character.hp = Math.min(character.hp + healAmount, character.max_hp);
+          character.inventar.splice(action.itemIndex, 1);
+          toast.success(`Du wurdest um ${healAmount} HP geheilt!`);
+        }
       }
       
       return newState;
@@ -348,6 +643,21 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return newState;
     }
 
+    case 'ASSIGN_STAT_POINT': {
+      const newState = { ...state };
+      const { character } = newState;
+      
+      if (character.unverteilte_punkte > 0) {
+        character[action.attribute] += 1;
+        character.unverteilte_punkte -= 1;
+        toast.success(`${action.attribute} erhöht!`);
+      } else {
+        toast.error("Keine freien Statpunkte verfügbar!");
+      }
+      
+      return newState;
+    }
+
     case 'LEARN_SPELL': {
       const newState = { ...state };
       const { character } = newState;
@@ -381,6 +691,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         staerke: state.character.staerke,
         intelligenz: state.character.intelligenz,
         ausweichen: state.character.ausweichen,
+        verteidigung: state.character.verteidigung,
         xp: state.character.xp,
         level: state.character.level,
         gold: state.character.gold,
@@ -388,7 +699,9 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         zauber: state.character.zauber,
         inventar: state.character.inventar,
         quest_log: state.character.quest_log,
-        ausgeruestet: state.character.ausgeruestet
+        ausgeruestet: state.character.ausgeruestet,
+        unverteilte_punkte: state.character.unverteilte_punkte,
+        statusEffekte: state.character.statusEffekte
       };
       
       localStorage.setItem(`rpg_save_${state.character.name}`, JSON.stringify(saveData));
@@ -403,6 +716,16 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     default:
       return state;
   }
+};
+
+// Check if an item is equipped
+const isItemEquipped = (item: Item, equipment: Equipment): boolean => {
+  return (
+    equipment.waffe === item ||
+    equipment.ruestung === item ||
+    equipment.helm === item ||
+    equipment.accessoire === item
+  );
 };
 
 // Helper function for monster attack logic
@@ -421,14 +744,16 @@ const handleMonsterAttack = (state: GameState, monster: Monster): GameState => {
   
   // Calculate damage reduction from armor
   const verteidigungBonus = getTotalBonus(character.ausgeruestet, 'verteidigung');
+  const totalVerteidigung = character.verteidigung + verteidigungBonus;
   
   // Bosses deal more damage
   let damage = monster.isBoss 
     ? monster.staerke + Math.floor(Math.random() * 5) // Bosses have variable damage
     : monster.staerke;
   
-  // Apply damage reduction
-  damage = Math.max(1, damage - Math.floor(verteidigungBonus / 2));
+  // Apply damage reduction: each point of defense reduces damage by 5%
+  const damageReduction = Math.min(0.75, totalVerteidigung * 0.05); // Cap at 75% reduction
+  damage = Math.max(1, Math.floor(damage * (1 - damageReduction)));
     
   character.hp = Math.max(0, character.hp - damage);
   
@@ -562,11 +887,15 @@ const handleCombatVictory = (state: GameState, monster: Monster): GameState => {
     character.level += 1;
     character.max_hp += 20;
     character.hp = character.max_hp;
-    character.staerke += 2;
-    character.intelligenz += 2;
-    character.ausweichen += 1;
     
-    state.combatLog = [...state.combatLog, `Level Up! Du bist jetzt Level ${character.level}!`];
+    // Give stat points instead of increasing stats directly
+    character.unverteilte_punkte += 5;
+    
+    state.combatLog = [
+      ...state.combatLog, 
+      `Level Up! Du bist jetzt Level ${character.level}!`,
+      `Du erhältst 5 Statpunkte zum Verteilen!`
+    ];
   }
   
   state.currentMonster = null;
