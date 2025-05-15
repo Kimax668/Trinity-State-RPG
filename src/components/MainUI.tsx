@@ -16,15 +16,15 @@ const MainUI: React.FC = () => {
   return (
     <div className="flex flex-col gap-4 p-4">
       {/* Character Stats Bar */}
-      <div className="flex justify-between items-center p-4 parchment">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-center p-4 parchment">
+        <div className="flex items-center gap-4 mb-4 md:mb-0">
           <h1 className="text-2xl font-bold">
             {character.name} 
             <span className="text-sm font-normal ml-2">Lvl. {character.level}</span>
           </h1>
         </div>
           
-        <div className="flex-grow mx-8">
+        <div className="flex-grow mx-2 md:mx-8 w-full md:w-auto">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <span className="w-8 text-right text-sm">HP:</span>
@@ -78,7 +78,7 @@ const MainUI: React.FC = () => {
                   <TabsTrigger value="location" className="flex-1">Ort: {character.aktueller_ort}</TabsTrigger>
                   <TabsTrigger value="quests" className="flex-1">Quests</TabsTrigger>
                 </TabsList>
-                <TabsContent value="location">
+                <TabsContent value="location" className="h-full">
                   <LocationUI />
                 </TabsContent>
                 <TabsContent value="quests">
@@ -89,7 +89,7 @@ const MainUI: React.FC = () => {
           </Card>
         </div>
 
-        <div>
+        <div className="w-full">
           <Tabs defaultValue="character" className="w-full">
             <TabsList className="w-full">
               <TabsTrigger value="character" className="flex-1">Charakter</TabsTrigger>

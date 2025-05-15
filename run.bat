@@ -2,34 +2,48 @@
 @echo off
 echo Starting Fantasy RPG...
 echo.
-echo This game requires Node.js and NPM to be installed.
-echo.
-echo Checking environment...
 
-where npm >nul 2>nul
-if %errorlevel% neq 0 (
-  echo NPM is not installed or not in PATH. Please install Node.js from https://nodejs.org/
-  goto end
+:: Check if the portable Node.js is already included
+if not exist "node-portable\" (
+  echo Setting up portable environment for first launch...
+  echo This might take a few minutes, please be patient.
+  echo.
+  
+  :: Create directories
+  mkdir node-portable 2>nul
+  
+  :: Download portable Node.js
+  echo Downloading portable Node.js...
+  powershell -Command "& {[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://nodejs.org/dist/v18.16.0/node-v18.16.0-win-x64.zip' -OutFile 'node-temp.zip'}"
+  
+  :: Extract Node.js
+  echo Extracting Node.js...
+  powershell -Command "& {Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('node-temp.zip', 'node-extract')}"
+  
+  :: Move to correct location
+  xcopy /E /I node-extract\node-v18.16.0-win-x64\* node-portable\
+  
+  :: Clean up
+  rmdir /S /Q node-extract
+  del node-temp.zip
+  
+  echo Portable environment set up successfully!
+  echo.
 )
 
-echo Installing dependencies...
-npm install
-if %errorlevel% neq 0 (
-  echo Failed to install dependencies.
-  goto end
+echo Starting the game...
+echo.
+
+:: Set PATH to use portable Node.js
+set PATH=%~dp0node-portable;%PATH%
+
+:: Check if node_modules exists, install if not
+if not exist "node_modules\" (
+  echo Installing game dependencies...
+  call node-portable\npm.cmd install
 )
 
-echo.
-echo Starting game...
-echo.
-echo The game will open in your default web browser.
-echo.
+:: Start the game
+call node-portable\npm.cmd run dev
 
-npm run dev
-if %errorlevel% neq 0 (
-  echo Failed to start the game.
-  goto end
-)
-
-:end
 pause

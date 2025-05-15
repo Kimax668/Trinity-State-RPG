@@ -72,7 +72,7 @@ const CharacterUI: React.FC = () => {
         <Progress value={xpProgress} />
       </CardHeader>
       <CardContent className="pb-2">
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-3 gap-y-2 md:grid-cols-2">
           <div className="stat-block">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -131,7 +131,7 @@ const CharacterUI: React.FC = () => {
               </span>
             </div>
           </div>
-          <div className="stat-block">
+          <div className="stat-block w-full">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
@@ -152,7 +152,7 @@ const CharacterUI: React.FC = () => {
               </span>
             </div>
           </div>
-          <div className="stat-block">
+          <div className="stat-block w-full">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <Shield size={16} className="mr-1" />

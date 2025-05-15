@@ -10,6 +10,20 @@ export default defineConfig(({ mode }) => ({
     host: true, // Listen on all addresses
     port: 8080,
     open: true, // Auto open browser
+    strictPort: true, // Don't try other ports if 8080 is taken
+  },
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+    sourcemap: mode === "development",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom"],
+          vendor: ["@tanstack/react-query", "recharts", "sonner"]
+        }
+      }
+    }
   },
   plugins: [
     react(),
