@@ -51,8 +51,18 @@ const CharacterUI: React.FC = () => {
     return totalBonus > 0 ? `+${totalBonus}` : '';
   };
 
+  // Check if an equipment item has level requirements
+  const checkItemLevelRequirement = (item: any) => {
+    if (!item) return null;
+    
+    if (item.minLevel && item.minLevel > character.level) {
+      return `(Benötigt Level ${item.minLevel})`;
+    }
+    return null;
+  };
+
   return (
-    <Card className="character-card mb-4">
+    <Card className="character-card mb-4 w-full">
       <CardHeader className="pb-2">
         <CardTitle>{character.name}</CardTitle>
         <CardDescription>Level {character.level}</CardDescription>
@@ -85,7 +95,7 @@ const CharacterUI: React.FC = () => {
                 <Swords size={16} className="mr-1" />
                 <span>Stärke:</span>
               </div>
-              <span>
+              <span className="flex items-center">
                 {character.staerke} <span className="text-green-500">{getEquipmentBonusText('staerke')}</span>
                 {character.unverteilte_punkte > 0 && (
                   <Button 
@@ -106,7 +116,7 @@ const CharacterUI: React.FC = () => {
                 <Brain size={16} className="mr-1" />
                 <span>Intelligenz:</span>
               </div>
-              <span>
+              <span className="flex items-center">
                 {character.intelligenz} <span className="text-green-500">{getEquipmentBonusText('intelligenz')}</span>
                 {character.unverteilte_punkte > 0 && (
                   <Button 
@@ -127,7 +137,7 @@ const CharacterUI: React.FC = () => {
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                 <span>Ausweichen:</span>
               </div>
-              <span>
+              <span className="flex items-center">
                 {character.ausweichen}% <span className="text-green-500">{getEquipmentBonusText('ausweichen')}</span>
                 {character.unverteilte_punkte > 0 && (
                   <Button 
@@ -148,7 +158,7 @@ const CharacterUI: React.FC = () => {
                 <Shield size={16} className="mr-1" />
                 <span>Verteidigung:</span>
               </div>
-              <span>
+              <span className="flex items-center">
                 {character.verteidigung} <span className="text-green-500">{getEquipmentBonusText('verteidigung')}</span>
                 {character.unverteilte_punkte > 0 && (
                   <Button 
@@ -175,21 +185,49 @@ const CharacterUI: React.FC = () => {
         <div className="mt-3">
           <h3 className="font-semibold text-sm mb-1">Ausrüstung:</h3>
           <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-            <div className="equipment-slot flex items-center">
-              <Swords size={14} className="mr-1" />
-              <span>Waffe: {character.ausgeruestet.waffe ? character.ausgeruestet.waffe.name : "—"}</span>
+            <div className="equipment-slot flex flex-col">
+              <div className="flex items-center">
+                <Swords size={14} className="mr-1" />
+                <span>Waffe: {character.ausgeruestet.waffe ? character.ausgeruestet.waffe.name : "—"}</span>
+              </div>
+              {character.ausgeruestet.waffe && character.ausgeruestet.waffe.minLevel && (
+                <div className="text-xs text-amber-600 ml-5">
+                  {checkItemLevelRequirement(character.ausgeruestet.waffe)}
+                </div>
+              )}
             </div>
-            <div className="equipment-slot flex items-center">
-              <Shield size={14} className="mr-1" />
-              <span>Rüstung: {character.ausgeruestet.ruestung ? character.ausgeruestet.ruestung.name : "—"}</span>
+            <div className="equipment-slot flex flex-col">
+              <div className="flex items-center">
+                <Shield size={14} className="mr-1" />
+                <span>Rüstung: {character.ausgeruestet.ruestung ? character.ausgeruestet.ruestung.name : "—"}</span>
+              </div>
+              {character.ausgeruestet.ruestung && character.ausgeruestet.ruestung.minLevel && (
+                <div className="text-xs text-amber-600 ml-5">
+                  {checkItemLevelRequirement(character.ausgeruestet.ruestung)}
+                </div>
+              )}
             </div>
-            <div className="equipment-slot flex items-center">
-              <Axe size={14} className="mr-1" />
-              <span>Helm: {character.ausgeruestet.helm ? character.ausgeruestet.helm.name : "—"}</span>
+            <div className="equipment-slot flex flex-col">
+              <div className="flex items-center">
+                <Axe size={14} className="mr-1" />
+                <span>Helm: {character.ausgeruestet.helm ? character.ausgeruestet.helm.name : "—"}</span>
+              </div>
+              {character.ausgeruestet.helm && character.ausgeruestet.helm.minLevel && (
+                <div className="text-xs text-amber-600 ml-5">
+                  {checkItemLevelRequirement(character.ausgeruestet.helm)}
+                </div>
+              )}
             </div>
-            <div className="equipment-slot flex items-center">
-              <Backpack size={14} className="mr-1" />
-              <span>Accessoire: {character.ausgeruestet.accessoire ? character.ausgeruestet.accessoire.name : "—"}</span>
+            <div className="equipment-slot flex flex-col">
+              <div className="flex items-center">
+                <Backpack size={14} className="mr-1" />
+                <span>Accessoire: {character.ausgeruestet.accessoire ? character.ausgeruestet.accessoire.name : "—"}</span>
+              </div>
+              {character.ausgeruestet.accessoire && character.ausgeruestet.accessoire.minLevel && (
+                <div className="text-xs text-amber-600 ml-5">
+                  {checkItemLevelRequirement(character.ausgeruestet.accessoire)}
+                </div>
+              )}
             </div>
           </div>
         </div>

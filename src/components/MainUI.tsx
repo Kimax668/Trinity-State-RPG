@@ -74,9 +74,9 @@ const MainUI: React.FC = () => {
           <Card className="parchment h-full">
             <CardContent className="p-4">
               <Tabs defaultValue="location">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="location">Ort: {character.aktueller_ort}</TabsTrigger>
-                  <TabsTrigger value="quests">Quests</TabsTrigger>
+                <TabsList className="mb-4 w-full">
+                  <TabsTrigger value="location" className="flex-1">Ort: {character.aktueller_ort}</TabsTrigger>
+                  <TabsTrigger value="quests" className="flex-1">Quests</TabsTrigger>
                 </TabsList>
                 <TabsContent value="location">
                   <LocationUI />
@@ -90,19 +90,19 @@ const MainUI: React.FC = () => {
         </div>
 
         <div>
-          <Tabs defaultValue="character">
+          <Tabs defaultValue="character" className="w-full">
             <TabsList className="w-full">
               <TabsTrigger value="character" className="flex-1">Charakter</TabsTrigger>
               <TabsTrigger value="inventory" className="flex-1">Inventar</TabsTrigger>
             </TabsList>
-            <TabsContent value="character">
+            <TabsContent value="character" className="w-full">
               <Card className="parchment h-full">
                 <CardContent className="p-4">
                   <CharacterUI />
                 </CardContent>
               </Card>
             </TabsContent>
-            <TabsContent value="inventory">
+            <TabsContent value="inventory" className="w-full">
               <Card className="parchment h-full">
                 <CardContent className="p-4">
                   <InventoryUI />
