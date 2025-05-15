@@ -1,29 +1,35 @@
 
 @echo off
-echo Willkommen beim Fantasy-RPG!
-echo Das Spiel wird gestartet...
+echo Starting Fantasy RPG...
 echo.
-echo Falls das Spiel nicht automatisch startet, besuche http://localhost:5173 in deinem Browser.
+echo This game requires Node.js and NPM to be installed.
 echo.
+echo Checking environment...
 
-:: Check if Node.js is installed
-where node >nul 2>nul
+where npm >nul 2>nul
 if %errorlevel% neq 0 (
-    echo Node.js ist nicht installiert.
-    echo Bitte installiere Node.js von https://nodejs.org/ und versuche es erneut.
-    echo.
-    pause
-    exit /b 1
+  echo NPM is not installed or not in PATH. Please install Node.js from https://nodejs.org/
+  goto end
 )
 
-:: Install dependencies if needed
-if not exist node_modules (
-    echo Installiere Abhängigkeiten...
-    npm install
+echo Installing dependencies...
+npm install
+if %errorlevel% neq 0 (
+  echo Failed to install dependencies.
+  goto end
 )
 
-:: Start the game
-echo Starte Spiel...
+echo.
+echo Starting game...
+echo.
+echo The game will open in your default web browser.
+echo.
+
 npm run dev
+if %errorlevel% neq 0 (
+  echo Failed to start the game.
+  goto end
+)
 
+:end
 pause

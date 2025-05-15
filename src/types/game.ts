@@ -10,6 +10,7 @@ export interface Item {
   typ: string;
   statusEffekt?: string;   // Status effect applied (burning, freezing, etc.)
   statusDauer?: number;    // Duration of status effect in turns
+  minLevel?: number;       // Minimum level required to use/equip
 }
 
 export interface Monster {
@@ -29,6 +30,7 @@ export interface Monster {
     dauer: number;
     schaden?: number;
   }[];
+  level?: number;         // Monster level
 }
 
 export interface Quest {
@@ -41,6 +43,8 @@ export interface Quest {
   belohnung_xp: number;
   belohnung_item: Item | null;
   abgeschlossen: boolean;
+  npc_geber?: string;     // NPC who gives the quest
+  npc_empfaenger?: string; // NPC who receives the quest completion
 }
 
 export interface NPC {
@@ -49,6 +53,7 @@ export interface NPC {
   dialog: Record<string, string>;
   handel: Item[];
   kauft?: string[];        // Types of items this NPC will buy
+  quests?: string[];       // Quests this NPC gives
 }
 
 export interface Equipment {
@@ -80,6 +85,17 @@ export interface Character {
     dauer: number;
     schaden?: number;
   }[];
+  entdeckte_orte?: string[]; // Discovered locations
+}
+
+export interface Location {
+  name: string;
+  beschreibung: string;
+  minLevel?: number;       // Minimum level required to discover
+  entdeckt: boolean;       // Whether location has been discovered
+  monsterLevel?: number;   // Level of monsters in this location
+  monsterTypen?: string[]; // Types of monsters that can be encountered
+  istDorf?: boolean;       // Whether this is a village
 }
 
 export type GameState = {
@@ -89,11 +105,18 @@ export type GameState = {
   npcs: Record<string, NPC>;
   quests: Quest[];
   orte: string[];
+  orteDetails: Record<string, Location>;
   currentMonster: Monster | null;
   combatLog: string[];
   gameScreen: string;
   loadedCharacters: string[];
   zauberDefinitionen: Record<string, ZauberDefinition>; // New field for spell definitions
+  autoSave: boolean;       // Whether to autosave
+  trainingCosts: {         // Training costs per level
+    basis: number,         // Base cost
+    multiplikator: number  // Multiplier per level
+  };
+  letzteSpeicherung?: number; // Timestamp of last autosave
 };
 
 export interface ZauberDefinition {
@@ -106,6 +129,7 @@ export interface ZauberDefinition {
   manaBedarf?: number;     // Future mana cost
   statusEffekt?: string;   // Status effect applied (burning, freezing, etc.)
   statusDauer?: number;    // Duration of status effect in turns
+  minLevel?: number;       // Minimum level requirement
 }
 
 export type GameAction =
@@ -123,10 +147,13 @@ export type GameAction =
   | { type: 'EQUIP_ITEM'; item: Item }
   | { type: 'USE_INVENTORY_ITEM'; itemIndex: number }
   | { type: 'DROP_ITEM'; itemIndex: number }
-  | { type: 'TAKE_QUEST'; quest: Quest }
+  | { type: 'TAKE_QUEST'; quest: Quest; npc: string }
+  | { type: 'COMPLETE_QUEST'; questIndex: number; npc: string }
   | { type: 'TRAIN_ATTRIBUTE'; attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung' }
   | { type: 'ASSIGN_STAT_POINT'; attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung' }
   | { type: 'LEARN_SPELL'; spell: string }
   | { type: 'CHANGE_SCREEN'; screen: string }
   | { type: 'UPDATE_COMBAT_LOG'; message: string }
+  | { type: 'TOGGLE_AUTOSAVE' }
+  | { type: 'DISCOVER_LOCATION'; location: string }
   | { type: 'SAVE_GAME' };

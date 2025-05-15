@@ -49,7 +49,8 @@ export const items: Record<string, Item> = {
     preis: 50,
     verkaufspreis: 25,
     verkaufbar: true,
-    typ: "waffe"
+    typ: "waffe",
+    minLevel: 3
   },
   "flammenstab": {
     name: "Flammenstab",
@@ -61,7 +62,8 @@ export const items: Record<string, Item> = {
     preis: 50,
     verkaufspreis: 25,
     verkaufbar: true,
-    typ: "waffe"
+    typ: "waffe",
+    minLevel: 5
   },
   "frostwand": {
     name: "Frostwand",
@@ -73,7 +75,8 @@ export const items: Record<string, Item> = {
     preis: 60,
     verkaufspreis: 30,
     verkaufbar: true,
-    typ: "waffe"
+    typ: "waffe",
+    minLevel: 8
   },
   "lebensraeuber": {
     name: "Lebensräuber",
@@ -83,7 +86,8 @@ export const items: Record<string, Item> = {
     preis: 65,
     verkaufspreis: 32,
     verkaufbar: true,
-    typ: "waffe"
+    typ: "waffe",
+    minLevel: 10
   },
   "betaeubungskeule": {
     name: "Betäubungskeule",
@@ -95,7 +99,8 @@ export const items: Record<string, Item> = {
     preis: 55,
     verkaufspreis: 27,
     verkaufbar: true,
-    typ: "waffe"
+    typ: "waffe",
+    minLevel: 7
   },
   "zauberbuch": {
     name: "Zauberbuch",
@@ -104,7 +109,8 @@ export const items: Record<string, Item> = {
     preis: 40,
     verkaufspreis: 20,
     verkaufbar: true,
-    typ: "waffe"
+    typ: "waffe",
+    minLevel: 4
   },
   "lederruestung": {
     name: "Lederrüstung",
@@ -122,7 +128,8 @@ export const items: Record<string, Item> = {
     preis: 50,
     verkaufspreis: 25,
     verkaufbar: true,
-    typ: "ruestung"
+    typ: "ruestung",
+    minLevel: 6
   },
   "magischer_bogen": {
     name: "Magischer Bogen",
@@ -132,7 +139,8 @@ export const items: Record<string, Item> = {
     preis: 60,
     verkaufspreis: 30,
     verkaufbar: true,
-    typ: "waffe"
+    typ: "waffe",
+    minLevel: 9
   },
   "kristallstab": {
     name: "Kristallstab",
@@ -142,7 +150,8 @@ export const items: Record<string, Item> = {
     preis: 70,
     verkaufspreis: 35,
     verkaufbar: true,
-    typ: "waffe"
+    typ: "waffe",
+    minLevel: 12
   },
   "spinnenfaden": {
     name: "Spinnenfaden",
@@ -170,7 +179,8 @@ export const items: Record<string, Item> = {
     preis: 40,
     verkaufspreis: 20,
     verkaufbar: true,
-    typ: "helm"
+    typ: "helm",
+    minLevel: 5
   },
   "magischer_helm": {
     name: "Magischer Helm",
@@ -179,7 +189,8 @@ export const items: Record<string, Item> = {
     preis: 65,
     verkaufspreis: 32,
     verkaufbar: true,
-    typ: "helm"
+    typ: "helm",
+    minLevel: 8
   },
   // Accessoires
   "glücksanhänger": {
@@ -198,7 +209,8 @@ export const items: Record<string, Item> = {
     preis: 45,
     verkaufspreis: 22,
     verkaufbar: true,
-    typ: "accessoire"
+    typ: "accessoire",
+    minLevel: 4
   },
   "magieamulett": {
     name: "Magieamulett",
@@ -207,7 +219,8 @@ export const items: Record<string, Item> = {
     preis: 45,
     verkaufspreis: 22,
     verkaufbar: true,
-    typ: "accessoire"
+    typ: "accessoire",
+    minLevel: 4
   },
   "verteidigungsamulett": {
     name: "Verteidigungsamulett",
@@ -216,7 +229,8 @@ export const items: Record<string, Item> = {
     preis: 50,
     verkaufspreis: 25,
     verkaufbar: true,
-    typ: "accessoire"
+    typ: "accessoire",
+    minLevel: 6
   },
   // Tränke mit Statuseffekten
   "feuertrank": {
@@ -251,11 +265,48 @@ export const items: Record<string, Item> = {
     verkaufspreis: 15,
     verkaufbar: true,
     typ: "verbrauchbar"
+  },
+  // Neue hochstufige Items
+  "drachenzahn": {
+    name: "Drachenzahn",
+    beschreibung: "Ein scharfer Zahn eines erlegten Drachen",
+    boni: {"staerke": 12, "statusSchaden": 8},
+    faehigkeit: "feuerschaden",
+    statusEffekt: "Brennen",
+    statusDauer: 4,
+    preis: 200,
+    verkaufspreis: 100,
+    verkaufbar: true,
+    typ: "waffe",
+    minLevel: 15
+  },
+  "eisruestung": {
+    name: "Eisrüstung",
+    beschreibung: "Eine magische Rüstung aus ewigem Eis",
+    boni: {"verteidigung": 10, "ausweichen": 3},
+    preis: 180,
+    verkaufspreis: 90,
+    verkaufbar: true,
+    typ: "ruestung",
+    minLevel: 12
+  },
+  "meisteramulett": {
+    name: "Meisteramulett",
+    beschreibung: "Legendäres Amulett eines großen Zauberers",
+    boni: {"intelligenz": 5, "ausweichen": 3, "verteidigung": 2},
+    preis: 250,
+    verkaufspreis: 125,
+    verkaufbar: true,
+    typ: "accessoire",
+    minLevel: 15
   }
 };
 
 // Orte
-export const orte = ["Stadt", "Wald", "Berge", "See", "Höhle", "Wüste"];
+export const orte = [
+  "Hauptstadt", "Wald", "Berge", "See", "Höhle", "Wüste", 
+  "Dornendorf", "Bergfried", "Seehain"
+];
 
 // Monster definieren
 export const monster_templates: Record<string, Monster[]> = {
@@ -269,7 +320,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [items["holzschwert"]],
       xp: 15,
       wahrscheinlichkeit: 0.8,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 1
     },
     {
       name: "Wolf",
@@ -280,7 +332,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [],
       xp: 12,
       wahrscheinlichkeit: 0.7,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 1
     },
     {
       name: "Bandit",
@@ -291,7 +344,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [items["eisenschwert"]],
       xp: 20,
       wahrscheinlichkeit: 0.5,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 2
     },
     {
       name: "Wald-Spinne",
@@ -302,7 +356,34 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [items["spinnenfaden"]],
       xp: 20,
       wahrscheinlichkeit: 0.5,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 2
+    }
+  ],
+  "Tiefer Wald": [
+    {
+      name: "Riesenwolf",
+      hp: 70,
+      max_hp: 70,
+      staerke: 12,
+      verteidigung: 5,
+      loot: [items["lederruestung"]],
+      xp: 35,
+      wahrscheinlichkeit: 0.6,
+      faehigkeiten: [],
+      level: 8
+    },
+    {
+      name: "Waldschrat",
+      hp: 90,
+      max_hp: 90,
+      staerke: 14,
+      verteidigung: 8,
+      loot: [items["glücksanhänger"]],
+      xp: 40,
+      wahrscheinlichkeit: 0.4,
+      faehigkeiten: [],
+      level: 9
     }
   ],
   "Berge": [
@@ -315,7 +396,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [items["eisenruestung"]],
       xp: 30,
       wahrscheinlichkeit: 0.4,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 5
     },
     {
       name: "Harpyie",
@@ -326,7 +408,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [],
       xp: 25,
       wahrscheinlichkeit: 0.6,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 4
     },
     {
       name: "Steingolem",
@@ -337,7 +420,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [],
       xp: 40,
       wahrscheinlichkeit: 0.3,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 6
     }
   ],
   "See": [
@@ -350,7 +434,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [],
       xp: 18,
       wahrscheinlichkeit: 0.5,
-      faehigkeiten: ["wasserzauber"]
+      faehigkeiten: ["wasserzauber"],
+      level: 3
     },
     {
       name: "Seeschlange",
@@ -361,7 +446,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [],
       xp: 35,
       wahrscheinlichkeit: 0.3,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 5
     },
     {
       name: "Krake",
@@ -372,7 +458,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [items["flammenstab"]],
       xp: 50,
       wahrscheinlichkeit: 0.2,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 7
     }
   ],
   "Höhle": [
@@ -385,7 +472,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [],
       xp: 10,
       wahrscheinlichkeit: 0.9,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 2
     },
     {
       name: "Höhlentroll",
@@ -396,7 +484,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [items["eisenruestung"]],
       xp: 40,
       wahrscheinlichkeit: 0.3,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 7
     },
     {
       name: "Höhlenspinne",
@@ -407,7 +496,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [],
       xp: 25,
       wahrscheinlichkeit: 0.6,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 5
     }
   ],
   "Wüste": [
@@ -420,7 +510,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [],
       xp: 20,
       wahrscheinlichkeit: 0.7,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 6
     },
     {
       name: "Sandwurm",
@@ -431,7 +522,8 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [],
       xp: 45,
       wahrscheinlichkeit: 0.2,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 10
     },
     {
       name: "Mumie",
@@ -442,7 +534,84 @@ export const monster_templates: Record<string, Monster[]> = {
       loot: [items["kristallstab"]],
       xp: 30,
       wahrscheinlichkeit: 0.4,
-      faehigkeiten: []
+      faehigkeiten: [],
+      level: 8
+    }
+  ],
+  "Verlorene Ruinen": [
+    {
+      name: "Skelettkrieger",
+      hp: 80,
+      max_hp: 80,
+      staerke: 16,
+      verteidigung: 6,
+      loot: [items["eisenschwert"]],
+      xp: 45,
+      wahrscheinlichkeit: 0.6,
+      faehigkeiten: [],
+      level: 10
+    },
+    {
+      name: "Geist",
+      hp: 60,
+      max_hp: 60,
+      staerke: 12,
+      verteidigung: 3,
+      loot: [items["magieamulett"]],
+      xp: 40,
+      wahrscheinlichkeit: 0.5,
+      faehigkeiten: ["geisterstoß"],
+      level: 12
+    },
+    {
+      name: "Lich",
+      hp: 120,
+      max_hp: 120,
+      staerke: 22,
+      verteidigung: 10,
+      loot: [items["kristallstab"]],
+      xp: 80,
+      wahrscheinlichkeit: 0.2,
+      faehigkeiten: ["todeszauber"],
+      level: 15
+    }
+  ],
+  "Verlassene Mine": [
+    {
+      name: "Minengoblin",
+      hp: 60,
+      max_hp: 60,
+      staerke: 14,
+      verteidigung: 4,
+      loot: [items["giftschwert"]],
+      xp: 40,
+      wahrscheinlichkeit: 0.7,
+      faehigkeiten: [],
+      level: 12
+    },
+    {
+      name: "Tiefenzwerg",
+      hp: 100,
+      max_hp: 100,
+      staerke: 18,
+      verteidigung: 12,
+      loot: [items["eisenruestung"]],
+      xp: 60,
+      wahrscheinlichkeit: 0.4,
+      faehigkeiten: [],
+      level: 14
+    },
+    {
+      name: "Lavadämon",
+      hp: 130,
+      max_hp: 130,
+      staerke: 25,
+      verteidigung: 10,
+      loot: [items["drachenzahn"]],
+      xp: 90,
+      wahrscheinlichkeit: 0.2,
+      faehigkeiten: ["feueratem"],
+      level: 16
     }
   ]
 };
@@ -451,17 +620,24 @@ export const monster_templates: Record<string, Monster[]> = {
 export const npcs: Record<string, NPC> = {
   "Händler": {
     name: "Hans der Händler",
-    ort: "Stadt",
+    ort: "Hauptstadt",
     dialog: {
       "gruss": "Willkommen in meinem Laden!",
       "handel": "Ich kaufe und verkaufe eine Vielzahl von Waren."
     },
-    handel: [items["heiltrank"], items["eisenschwert"], items["grosser_heiltrank"]],
-    kauft: ["waffe", "ruestung", "verbrauchbar"] // Types of items this NPC will buy
+    handel: [
+      items["heiltrank"], 
+      items["eisenschwert"], 
+      items["grosser_heiltrank"], 
+      items["lederruestung"],
+      items["lederhelm"]
+    ],
+    kauft: ["waffe", "ruestung", "verbrauchbar"], // Types of items this NPC will buy
+    quests: ["Goblin Plage", "Wolfsjagd"]
   },
   "Schmied": {
     name: "Goran der Schmied",
-    ort: "Stadt",
+    ort: "Hauptstadt",
     dialog: {
       "gruss": "Was kann ich für dich schmieden?",
       "handel": "Ich kaufe und verkaufe die besten Waffen und Rüstungen."
@@ -474,11 +650,12 @@ export const npcs: Record<string, NPC> = {
       items["lebensraeuber"],
       items["betaeubungskeule"]
     ],
-    kauft: ["waffe", "ruestung", "helm"] // Types of items this NPC will buy
+    kauft: ["waffe", "ruestung", "helm"], // Types of items this NPC will buy
+    quests: ["Trollgefahr"]
   },
   "Magier": {
     name: "Elara die Magierin",
-    ort: "Stadt",
+    ort: "Hauptstadt",
     dialog: {
       "gruss": "Suchst du arkanes Wissen?",
       "handel": "Diese magischen Gegenstände könnten dir helfen. Ich kaufe auch magische Artefakte."
@@ -493,11 +670,12 @@ export const npcs: Record<string, NPC> = {
       items["frosttrank"],
       items["betaeubungstrank"]
     ],
-    kauft: ["waffe", "accessoire", "verbrauchbar"] // Types of items this NPC will buy
+    kauft: ["waffe", "accessoire", "verbrauchbar"], // Types of items this NPC will buy
+    quests: ["Höhlenforschung"]
   },
   "Abenteurer": {
     name: "Finn der Abenteurer",
-    ort: "Stadt",
+    ort: "Hauptstadt",
     dialog: {
       "gruss": "Ah, ein Mitstreiter! Ich habe einige seltene Stücke auf meinen Reisen gefunden.",
       "handel": "Interesse an etwas Besonderem? Ich kaufe alles, was wertvoll ist."
@@ -509,7 +687,87 @@ export const npcs: Record<string, NPC> = {
       items["verteidigungsamulett"],
       items["magischer_bogen"]
     ],
-    kauft: ["*"] // The * means this NPC buys all item types
+    kauft: ["*"], // The * means this NPC buys all item types
+    quests: ["Wüstenplage"]
+  },
+  "Dorfältester": {
+    name: "Aldric der Älteste",
+    ort: "Dornendorf",
+    dialog: {
+      "gruss": "Willkommen, Fremder. Unser kleines Dorf kann immer Hilfe gebrauchen.",
+      "handel": "Ich habe ein paar Dinge, die dir vielleicht nützlich sein könnten."
+    },
+    handel: [
+      items["heiltrank"],
+      items["lederruestung"],
+      items["holzschwert"]
+    ],
+    kauft: ["material", "verbrauchbar"],
+    quests: ["Waldspinnen Bedrohung"]
+  },
+  "Dorfschmied": {
+    name: "Brom der Schmied",
+    ort: "Bergfried",
+    dialog: {
+      "gruss": "Die Berge geben uns das beste Erz. Meine Waffen sind unübertroffen!",
+      "handel": "Hier, sieh dir diese Qualität an. Besser findest du es nirgendwo!"
+    },
+    handel: [
+      items["eisenschwert"],
+      items["eisenruestung"],
+      items["eisenhelm"],
+      items["stärkering"]
+    ],
+    kauft: ["waffe", "ruestung", "helm"],
+    quests: ["Erzzwergenproblem"]
+  },
+  "Fischer": {
+    name: "Marin der Fischer",
+    ort: "Seehain",
+    dialog: {
+      "gruss": "Der See ist großzügig zu uns, aber auch gefährlich. Die Monster werden immer dreister.",
+      "handel": "Ich handle nicht nur mit Fisch, sondern auch mit nützlichen Dingen für Abenteurer."
+    },
+    handel: [
+      items["heiltrank"],
+      items["grosser_heiltrank"],
+      items["feuertrank"],
+      items["glücksanhänger"]
+    ],
+    kauft: ["verbrauchbar", "material"],
+    quests: ["Kraken Schrecken"]
+  },
+  "Zauberin": {
+    name: "Lyra die Zauberin",
+    ort: "Seehain",
+    dialog: {
+      "gruss": "Ich spüre eine magische Begabung in dir. Vielleicht kann ich dir helfen, sie zu entwickeln?",
+      "handel": "Diese Artefakte enthalten uralte Magie. Nutze sie weise."
+    },
+    handel: [
+      items["zauberbuch"],
+      items["frosttrank"],
+      items["magieamulett"],
+      items["magischer_helm"]
+    ],
+    kauft: ["waffe", "accessoire"],
+    quests: ["Magische Artefakte"]
+  },
+  "Waffenmeister": {
+    name: "Thorne der Waffenmeister",
+    ort: "Bergfried",
+    dialog: {
+      "gruss": "Wenn du überleben willst, brauchst du die besten Waffen - und das Können, sie zu benutzen!",
+      "handel": "Ich verkaufe nur an diejenigen, die ich für würdig halte. Beweise dich!"
+    },
+    handel: [
+      items["giftschwert"],
+      items["betaeubungskeule"],
+      items["magischer_bogen"],
+      items["verteidigungsamulett"]
+    ],
+    kauft: ["waffe"],
+    quests: ["Steingolem Bedrohung"]
   }
 };
 
@@ -517,7 +775,7 @@ export const npcs: Record<string, NPC> = {
 export const standard_quests: Quest[] = [
   {
     name: "Goblin Plage",
-    beschreibung: "Besiege 5 Goblins",
+    beschreibung: "Besiege 5 Goblins im Wald",
     ziel_typ: "Goblin",
     ziel_anzahl: 5,
     aktuelle_anzahl: 0,
@@ -528,7 +786,7 @@ export const standard_quests: Quest[] = [
   },
   {
     name: "Wolfsjagd",
-    beschreibung: "Erlege 3 Wölfe",
+    beschreibung: "Erlege 3 Wölfe im Wald",
     ziel_typ: "Wolf",
     ziel_anzahl: 3,
     aktuelle_anzahl: 0,
@@ -539,7 +797,7 @@ export const standard_quests: Quest[] = [
   },
   {
     name: "Trollgefahr",
-    beschreibung: "Besiege einen Bergtroll",
+    beschreibung: "Besiege einen Bergtroll in den Bergen",
     ziel_typ: "Bergtroll",
     ziel_anzahl: 1,
     aktuelle_anzahl: 0,
@@ -550,7 +808,7 @@ export const standard_quests: Quest[] = [
   },
   {
     name: "Wüstenplage",
-    beschreibung: "Besiege 3 Skorpione",
+    beschreibung: "Besiege 3 Skorpione in der Wüste",
     ziel_typ: "Skorpion",
     ziel_anzahl: 3,
     aktuelle_anzahl: 0,
@@ -561,13 +819,68 @@ export const standard_quests: Quest[] = [
   },
   {
     name: "Höhlenforschung",
-    beschreibung: "Besiege eine Höhlenspinne",
+    beschreibung: "Besiege eine Höhlenspinne in der Höhle",
     ziel_typ: "Höhlenspinne",
     ziel_anzahl: 1,
     aktuelle_anzahl: 0,
     belohnung_gold: 100,
     belohnung_xp: 50,
     belohnung_item: items["kristallstab"],
+    abgeschlossen: false
+  },
+  {
+    name: "Waldspinnen Bedrohung",
+    beschreibung: "Beseitige 4 Wald-Spinnen, die das Dorf bedrohen",
+    ziel_typ: "Wald-Spinne",
+    ziel_anzahl: 4,
+    aktuelle_anzahl: 0,
+    belohnung_gold: 80,
+    belohnung_xp: 45,
+    belohnung_item: items["lederruestung"],
+    abgeschlossen: false
+  },
+  {
+    name: "Kraken Schrecken",
+    beschreibung: "Töte den Kraken, der die Fischer bedroht",
+    ziel_typ: "Krake",
+    ziel_anzahl: 1,
+    aktuelle_anzahl: 0,
+    belohnung_gold: 200,
+    belohnung_xp: 100,
+    belohnung_item: items["flammenstab"],
+    abgeschlossen: false
+  },
+  {
+    name: "Erzzwergenproblem",
+    beschreibung: "Sammle Erz von 3 Tiefenzwergen in der Verlassenen Mine",
+    ziel_typ: "Tiefenzwerg",
+    ziel_anzahl: 3,
+    aktuelle_anzahl: 0,
+    belohnung_gold: 250,
+    belohnung_xp: 120,
+    belohnung_item: items["eisruestung"],
+    abgeschlossen: false
+  },
+  {
+    name: "Magische Artefakte",
+    beschreibung: "Besiege den Lich in den Verlorenen Ruinen und hole sein magisches Artefakt",
+    ziel_typ: "Lich",
+    ziel_anzahl: 1,
+    aktuelle_anzahl: 0,
+    belohnung_gold: 300,
+    belohnung_xp: 150,
+    belohnung_item: items["kristallstab"],
+    abgeschlossen: false
+  },
+  {
+    name: "Steingolem Bedrohung",
+    beschreibung: "Zerstöre 2 gefährliche Steingolem in den Bergen",
+    ziel_typ: "Steingolem",
+    ziel_anzahl: 2,
+    aktuelle_anzahl: 0,
+    belohnung_gold: 180,
+    belohnung_xp: 90,
+    belohnung_item: items["betaeubungskeule"],
     abgeschlossen: false
   }
 ];

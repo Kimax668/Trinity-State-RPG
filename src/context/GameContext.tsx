@@ -1,8 +1,91 @@
+
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Character, GameAction, GameState, Item, Monster, Quest, Equipment } from '../types/game';
+import { Character, GameAction, GameState, Item, Monster, Quest, Equipment, Location } from '../types/game';
 import { items, monster_templates, npcs, orte, standard_quests } from '../data/gameData';
 import zauberDefinitionen from '../data/zauberData';
+
+// Initial locations with details
+const initialOrteDetails: Record<string, Location> = {
+  "Hauptstadt": {
+    name: "Hauptstadt",
+    beschreibung: "Das Zentrum des Königreichs mit vielen Händlern und Dienstleistungen.",
+    entdeckt: true,
+    istDorf: false
+  },
+  "Wald": {
+    name: "Wald",
+    beschreibung: "Ein dichter Wald voller Leben und Gefahren.",
+    entdeckt: true,
+    monsterLevel: 1
+  },
+  "Berge": {
+    name: "Berge",
+    beschreibung: "Raue und gefährliche Berge mit starken Gegnern.",
+    entdeckt: true,
+    monsterLevel: 5
+  },
+  "See": {
+    name: "See",
+    beschreibung: "Ein großer See mit mysteriösen Kreaturen.",
+    entdeckt: true,
+    monsterLevel: 3
+  },
+  "Höhle": {
+    name: "Höhle",
+    beschreibung: "Eine dunkle Höhle voller Monster.",
+    entdeckt: true,
+    monsterLevel: 7
+  },
+  "Wüste": {
+    name: "Wüste",
+    beschreibung: "Eine heiße und unwirtliche Wüste.",
+    entdeckt: true,
+    monsterLevel: 10
+  },
+  "Dornendorf": {
+    name: "Dornendorf",
+    beschreibung: "Ein kleines Dorf am Rande des Waldes.",
+    entdeckt: false,
+    istDorf: true,
+    minLevel: 3
+  },
+  "Bergfried": {
+    name: "Bergfried",
+    beschreibung: "Ein Dorf in den Bergen, bekannt für seine Schmiede.",
+    entdeckt: false,
+    istDorf: true,
+    minLevel: 8
+  },
+  "Seehain": {
+    name: "Seehain",
+    beschreibung: "Ein Fischerdorf am Ufer des großen Sees.",
+    entdeckt: false,
+    istDorf: true,
+    minLevel: 5
+  },
+  "Verlorene Ruinen": {
+    name: "Verlorene Ruinen",
+    beschreibung: "Uralte Ruinen mit gefährlichen Untoten.",
+    entdeckt: false,
+    monsterLevel: 12,
+    minLevel: 10
+  },
+  "Tiefer Wald": {
+    name: "Tiefer Wald",
+    beschreibung: "Der tiefste Teil des Waldes mit mächtigen Kreaturen.",
+    entdeckt: false,
+    monsterLevel: 8,
+    minLevel: 7
+  },
+  "Verlassene Mine": {
+    name: "Verlassene Mine",
+    beschreibung: "Eine alte Mine voller Monster und Schätze.",
+    entdeckt: false,
+    monsterLevel: 15,
+    minLevel: 12
+  }
+};
 
 // Initial equipment state
 const initialEquipment: Equipment = {
@@ -27,9 +110,10 @@ const createInitialCharacter = (name: string): Character => ({
   inventar: [],
   ausgeruestet: initialEquipment,
   zauber: [],
-  aktueller_ort: "Stadt",
+  aktueller_ort: "Hauptstadt",
   quest_log: [],
-  unverteilte_punkte: 0 // Unassigned stat points
+  unverteilte_punkte: 0, // Unassigned stat points
+  entdeckte_orte: ["Hauptstadt", "Wald", "Berge", "See", "Höhle", "Wüste"]
 });
 
 // Initial game state
@@ -39,12 +123,18 @@ const initialState: GameState = {
   monsters: monster_templates,
   npcs,
   quests: standard_quests,
-  orte,
+  orte: ["Hauptstadt", "Wald", "Berge", "See", "Höhle", "Wüste"],
+  orteDetails: initialOrteDetails,
   currentMonster: null,
   combatLog: [],
   gameScreen: 'start', // 'start', 'main', 'combat', 'shop', etc.
   loadedCharacters: [],
-  zauberDefinitionen // Add spell definitions
+  zauberDefinitionen, // Add spell definitions
+  autoSave: true,
+  trainingCosts: {
+    basis: 20,
+    multiplikator: 0.5 // +50% cost per level
+  }
 };
 
 // Get total bonus from all equipped items
@@ -141,43 +231,144 @@ const applyStatusEffect = (
   return updatedEntity;
 };
 
+// Calculate training cost based on character level
+const calculateTrainingCost = (level: number, baseCost: number, multiplier: number): number => {
+  return Math.floor(baseCost * (1 + ((level - 1) * multiplier)));
+};
+
+// Check if character can discover a new location based on level
+const checkLocationDiscovery = (character: Character, orteDetails: Record<string, Location>): string | null => {
+  // Get undiscovered locations that meet level requirements
+  const discoverable = Object.entries(orteDetails)
+    .filter(([_, location]) => !location.entdeckt && 
+                             (!location.minLevel || character.level >= location.minLevel))
+    .map(([name, _]) => name);
+                             
+  if (discoverable.length === 0) return null;
+  
+  // 15% chance of discovery when traveling
+  if (Math.random() < 0.15) {
+    return discoverable[Math.floor(Math.random() * discoverable.length)];
+  }
+  
+  return null;
+};
+
+// Auto-save function
+const performAutoSave = (state: GameState) => {
+  // Don't autosave if disabled or no character name
+  if (!state.autoSave || !state.character.name) return state;
+  
+  // Only save every 2 minutes
+  const now = Date.now();
+  if (state.letzteSpeicherung && (now - state.letzteSpeicherung) < 120000) {
+    return state;
+  }
+  
+  try {
+    const saveData = {
+      name: state.character.name,
+      hp: state.character.hp,
+      max_hp: state.character.max_hp,
+      staerke: state.character.staerke,
+      intelligenz: state.character.intelligenz,
+      ausweichen: state.character.ausweichen,
+      verteidigung: state.character.verteidigung,
+      xp: state.character.xp,
+      level: state.character.level,
+      gold: state.character.gold,
+      aktueller_ort: state.character.aktueller_ort,
+      zauber: state.character.zauber,
+      inventar: state.character.inventar,
+      quest_log: state.character.quest_log,
+      ausgeruestet: state.character.ausgeruestet,
+      unverteilte_punkte: state.character.unverteilte_punkte,
+      statusEffekte: state.character.statusEffekte,
+      entdeckte_orte: state.character.entdeckte_orte
+    };
+    
+    localStorage.setItem(`rpg_save_${state.character.name}`, JSON.stringify(saveData));
+    console.log("Spiel automatisch gespeichert:", new Date().toLocaleTimeString());
+    
+    return {
+      ...state,
+      letzteSpeicherung: now,
+      loadedCharacters: [...new Set([...state.loadedCharacters, state.character.name])]
+    };
+  } catch (error) {
+    console.error("Fehler beim automatischen Speichern:", error);
+    return state;
+  }
+};
+
 // Game reducer
 const gameReducer = (state: GameState, action: GameAction): GameState => {
+  let newState = { ...state };
+  
   switch (action.type) {
     case 'CREATE_CHARACTER': {
       const character = createInitialCharacter(action.name);
-      // Add starting items
-      character.inventar.push(items.holzschwert);
-      character.inventar.push(items.heiltrank);
-      return {
+      // No starting items anymore
+      newState = {
         ...state,
         character,
         gameScreen: 'main'
       };
+      return performAutoSave(newState);
     }
 
-    case 'LOAD_CHARACTER':
-      return {
+    case 'LOAD_CHARACTER': {
+      // Update entdeckte_orte if missing in saved character
+      const character = action.character;
+      if (!character.entdeckte_orte) {
+        character.entdeckte_orte = ["Hauptstadt", "Wald", "Berge", "See", "Höhle", "Wüste"];
+      }
+      
+      // Copy discovered locations to orteDetails
+      const updatedOrteDetails = { ...state.orteDetails };
+      character.entdeckte_orte.forEach(ort => {
+        if (updatedOrteDetails[ort]) {
+          updatedOrteDetails[ort].entdeckt = true;
+        }
+      });
+      
+      newState = {
         ...state,
-        character: action.character,
+        character,
+        orteDetails: updatedOrteDetails,
         gameScreen: 'main'
       };
+      return newState;
+    }
 
     case 'TRAVEL_TO': {
-      // Check for random encounters
-      const newState = { ...state };
-      newState.character.aktueller_ort = action.location;
+      // Update location
+      const updatedState = { ...state };
+      updatedState.character.aktueller_ort = action.location;
+      
+      // Check for location discovery
+      const discoveredLocation = checkLocationDiscovery(updatedState.character, updatedState.orteDetails);
+      if (discoveredLocation) {
+        updatedState.orteDetails[discoveredLocation].entdeckt = true;
+        if (!updatedState.character.entdeckte_orte) {
+          updatedState.character.entdeckte_orte = [...updatedState.orte];
+        }
+        updatedState.character.entdeckte_orte.push(discoveredLocation);
+        toast.success(`Du hast einen neuen Ort entdeckt: ${discoveredLocation}!`);
+      }
       
       // Increased random encounter chance (50% chance instead of 30%)
       // Higher chance in dungeon-like locations
       let encounterChance = 0.5;
-      if (action.location === "Höhle" || action.location === "Berge") {
+      const location = updatedState.orteDetails[action.location];
+      
+      if (action.location === "Höhle" || action.location === "Berge" || 
+          action.location === "Verlorene Ruinen" || action.location === "Verlassene Mine") {
         encounterChance = 0.7; // 70% chance in dungeon-like locations
       }
       
-      if (Math.random() < encounterChance && action.location !== 'Stadt') {
-        const location = action.location;
-        const possibleMonsters = state.monsters[location] || [];
+      if (!location.istDorf && Math.random() < encounterChance) {
+        const possibleMonsters = state.monsters[action.location] || [];
         
         if (possibleMonsters.length > 0) {
           // Boss encounter chance (10%)
@@ -186,6 +377,22 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
           // Select a monster based on probability
           const monsterTemplate = { ...possibleMonsters[Math.floor(Math.random() * possibleMonsters.length)] };
           const monster: Monster = { ...monsterTemplate };
+          
+          // Apply location monster level if specified
+          if (location.monsterLevel) {
+            const levelDiff = location.monsterLevel - 1; // Base adjustment
+            monster.level = location.monsterLevel;
+            monster.max_hp += levelDiff * 10;
+            monster.hp = monster.max_hp;
+            monster.staerke += Math.floor(levelDiff * 1.5);
+            monster.xp += levelDiff * 5;
+            
+            if (monster.verteidigung) {
+              monster.verteidigung += Math.floor(levelDiff * 0.5);
+            } else {
+              monster.verteidigung = Math.floor(levelDiff * 0.5);
+            }
+          }
           
           // If boss encounter, enhance the monster
           if (isBossEncounter) {
@@ -199,6 +406,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
               : Math.floor(monster.staerke * 0.3); // Default defense
             monster.xp = Math.floor(monster.xp * 2);
             monster.lootChance = 0.8; // 80% loot chance for bosses
+            monster.level = (monster.level || 1) + 2; // Bosses are 2 levels higher
           } else {
             monster.lootChance = monster.lootChance || 0.3; // Default 30% loot chance
             if (!monster.verteidigung) {
@@ -206,31 +414,33 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             }
           }
           
-          newState.currentMonster = monster;
-          newState.gameScreen = 'combat';
-          newState.combatLog = [
+          updatedState.currentMonster = monster;
+          updatedState.gameScreen = 'combat';
+          updatedState.combatLog = [
             isBossEncounter 
-              ? `Ein mächtiger Boss erscheint: ${monster.name}!` 
-              : `Ein ${monster.name} erscheint!`
+              ? `Ein mächtiger Boss erscheint: ${monster.name}${monster.level ? ` (Level ${monster.level})` : ''}!` 
+              : `Ein ${monster.name}${monster.level ? ` (Level ${monster.level})` : ''} erscheint!`
           ];
         }
       }
       
-      return newState;
+      newState = updatedState;
+      return performAutoSave(newState);
     }
 
     case 'START_COMBAT':
-      return {
+      newState = {
         ...state,
         currentMonster: action.monster,
-        combatLog: [`Ein ${action.monster.name} erscheint!`],
+        combatLog: [`Ein ${action.monster.name}${action.monster.level ? ` (Level ${action.monster.level})` : ''} erscheint!`],
         gameScreen: 'combat'
       };
+      return newState;
 
     case 'ATTACK_MONSTER': {
       if (!state.currentMonster) return state;
       
-      const newState = { ...state };
+      newState = { ...state };
       const { character } = newState;
       let monster = { ...newState.currentMonster };
       
@@ -304,25 +514,27 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       // Check if monster is defeated
       if (monster.hp <= 0) {
-        return handleCombatVictory(newState, monster);
+        newState = handleCombatVictory(newState, monster);
+        return performAutoSave(newState);
       }
       
       // Monster attacks back if not stunned
       if (!monsterStunned) {
-        return handleMonsterAttack(newState, monster);
+        newState = handleMonsterAttack(newState, monster);
       } else {
         newState.combatLog = [
           ...newState.combatLog, 
           `${monster.name} ist betäubt und kann nicht angreifen!`
         ];
-        return newState;
       }
+      
+      return newState;
     }
 
     case 'CAST_SPELL': {
       if (!state.currentMonster) return state;
       
-      const newState = { ...state };
+      newState = { ...state };
       const { character } = newState;
       let monster = { ...newState.currentMonster };
       const spellName = action.spell;
@@ -332,6 +544,15 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         newState.combatLog = [
           ...newState.combatLog, 
           `Fehler: Zauber ${spellName} nicht gefunden!`
+        ];
+        return newState;
+      }
+      
+      // Check level requirements for spells
+      if (spellDef.minLevel && character.level < spellDef.minLevel) {
+        newState.combatLog = [
+          ...newState.combatLog, 
+          `Du benötigst Level ${spellDef.minLevel} um ${spellName} zu wirken!`
         ];
         return newState;
       }
@@ -403,7 +624,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       // Check if monster is defeated
       if (monster.hp <= 0) {
-        return handleCombatVictory(newState, monster);
+        newState = handleCombatVictory(newState, monster);
+        return performAutoSave(newState);
       }
       
       // Check for "Betäubt" status on monster which prevents it from attacking this turn
@@ -413,18 +635,19 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       // Monster attacks back if not stunned
       if (!monsterStunned) {
-        return handleMonsterAttack(newState, monster);
+        newState = handleMonsterAttack(newState, monster);
       } else {
         newState.combatLog = [
           ...newState.combatLog, 
           `${monster.name} ist betäubt und kann nicht angreifen!`
         ];
-        return newState;
       }
+      
+      return newState;
     }
 
     case 'USE_ITEM': {
-      const newState = { ...state };
+      newState = { ...state };
       const { character } = newState;
       const item = character.inventar[action.itemIndex];
       
@@ -462,7 +685,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         );
         
         if (!monsterStunned) {
-          return handleMonsterAttack(newState, newState.currentMonster);
+          newState = handleMonsterAttack(newState, newState.currentMonster);
         } else {
           newState.combatLog = [
             ...newState.combatLog, 
@@ -471,11 +694,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         }
       }
       
-      return newState;
+      return performAutoSave(newState);
     }
 
     case 'FLEE_COMBAT': {
-      const newState = { ...state };
+      newState = { ...state };
       
       // Harder to flee from bosses (30% chance) vs regular monsters (50% chance)
       const fleeChance = newState.currentMonster?.isBoss ? 0.3 : 0.5;
@@ -484,7 +707,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         newState.combatLog = [...newState.combatLog, "Flucht erfolgreich!"];
         newState.currentMonster = null;
         newState.gameScreen = 'main';
-        return newState;
+        return performAutoSave(newState);
       }
       
       newState.combatLog = [...newState.combatLog, "Flucht gescheitert!"];
@@ -494,16 +717,23 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     }
 
     case 'END_COMBAT':
-      return {
+      newState = {
         ...state,
         currentMonster: null,
         gameScreen: 'main'
       };
+      return performAutoSave(newState);
 
     case 'BUY_ITEM': {
-      const newState = { ...state };
+      newState = { ...state };
       const { character } = newState;
       const item = action.item;
+      
+      // Check level requirement
+      if (item.minLevel && character.level < item.minLevel) {
+        toast.error(`Du benötigst Level ${item.minLevel} für ${item.name}!`);
+        return newState;
+      }
       
       if (character.gold >= item.preis) {
         character.gold -= item.preis;
@@ -513,11 +743,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         toast.error("Nicht genug Gold!");
       }
       
-      return newState;
+      return performAutoSave(newState);
     }
 
     case 'SELL_ITEM': {
-      const newState = { ...state };
+      newState = { ...state };
       const { character } = newState;
       const item = character.inventar[action.itemIndex];
       
@@ -546,13 +776,21 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       character.inventar.splice(action.itemIndex, 1);
       
       toast.success(`${item.name} für ${sellPrice} Gold verkauft!`);
-      return newState;
+      return performAutoSave(newState);
     }
 
     case 'EQUIP_ITEM': {
-      const newState = { ...state };
+      newState = { ...state };
       const item = action.item;
-      const equipment = {...newState.character.ausgeruestet};
+      const { character } = newState;
+      
+      // Check level requirement
+      if (item.minLevel && character.level < item.minLevel) {
+        toast.error(`Du benötigst Level ${item.minLevel} für ${item.name}!`);
+        return newState;
+      }
+      
+      const equipment = {...character.ausgeruestet};
       
       // Assign item to the correct equipment slot based on its type
       switch(item.typ) {
@@ -573,13 +811,13 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
           return newState;
       }
       
-      newState.character.ausgeruestet = equipment;
+      character.ausgeruestet = equipment;
       toast.success(`${item.name} ausgerüstet!`);
-      return newState;
+      return performAutoSave(newState);
     }
 
     case 'USE_INVENTORY_ITEM': {
-      const newState = { ...state };
+      newState = { ...state };
       const { character } = newState;
       const item = character.inventar[action.itemIndex];
       
@@ -592,11 +830,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         }
       }
       
-      return newState;
+      return performAutoSave(newState);
     }
 
     case 'DROP_ITEM': {
-      const newState = { ...state };
+      newState = { ...state };
       const { character } = newState;
       
       if (action.itemIndex >= 0 && action.itemIndex < character.inventar.length) {
@@ -618,33 +856,79 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         toast.info(`${droppedItem.name} weggeworfen`);
       }
       
-      return newState;
+      return performAutoSave(newState);
     }
 
     case 'TAKE_QUEST': {
-      const newState = { ...state };
-      newState.character.quest_log.push(action.quest);
-      toast.success(`Quest angenommen: ${action.quest.name}`);
-      return newState;
+      newState = { ...state };
+      // Set the NPC who gave the quest
+      const quest = {...action.quest, npc_geber: action.npc, npc_empfaenger: action.npc};
+      newState.character.quest_log.push(quest);
+      toast.success(`Quest angenommen: ${quest.name}`);
+      return performAutoSave(newState);
+    }
+    
+    case 'COMPLETE_QUEST': {
+      newState = { ...state };
+      const { character } = newState;
+      const questIndex = action.questIndex;
+      
+      if (questIndex >= 0 && questIndex < character.quest_log.length) {
+        const quest = character.quest_log[questIndex];
+        
+        // Check if quest is completed and being turned in to the right NPC
+        if (quest.abgeschlossen && quest.npc_empfaenger === action.npc) {
+          // Give rewards
+          character.gold += quest.belohnung_gold;
+          character.xp += quest.belohnung_xp;
+          
+          if (quest.belohnung_item) {
+            character.inventar.push(quest.belohnung_item);
+          }
+          
+          // Remove quest from log
+          character.quest_log.splice(questIndex, 1);
+          
+          toast.success(`Quest ${quest.name} abgeschlossen! Belohnungen erhalten!`);
+          
+          // Check for level up
+          if (character.xp >= character.level * 100) {
+            newState = handleLevelUp(newState);
+          }
+        } else if (!quest.abgeschlossen) {
+          toast.error(`Diese Quest ist noch nicht abgeschlossen!`);
+        } else {
+          toast.error(`Du musst diese Quest bei ${quest.npc_empfaenger} abgeben!`);
+        }
+      }
+      
+      return performAutoSave(newState);
     }
 
     case 'TRAIN_ATTRIBUTE': {
-      const newState = { ...state };
+      newState = { ...state };
       const { character } = newState;
       
-      if (character.gold >= 20) {
-        character.gold -= 20;
+      // Calculate training cost based on level
+      const cost = calculateTrainingCost(
+        character.level, 
+        state.trainingCosts.basis, 
+        state.trainingCosts.multiplikator
+      );
+      
+      if (character.gold >= cost) {
+        character.gold -= cost;
         character[action.attribute] += 1;
-        toast.success(`${action.attribute} erhöht!`);
+        toast.success(`${action.attribute} erhöht! (Kosten: ${cost} Gold)`);
       } else {
-        toast.error("Nicht genug Gold!");
+        toast.error(`Nicht genug Gold! (Benötigt: ${cost} Gold)`);
       }
       
-      return newState;
+      return performAutoSave(newState);
     }
 
     case 'ASSIGN_STAT_POINT': {
-      const newState = { ...state };
+      newState = { ...state };
       const { character } = newState;
       
       if (character.unverteilte_punkte > 0) {
@@ -655,20 +939,36 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         toast.error("Keine freien Statpunkte verfügbar!");
       }
       
-      return newState;
+      return performAutoSave(newState);
     }
 
     case 'LEARN_SPELL': {
-      const newState = { ...state };
+      newState = { ...state };
       const { character } = newState;
+      const spellDef = state.zauberDefinitionen[action.spell];
+      
+      if (!spellDef) {
+        toast.error(`Zauber ${action.spell} nicht gefunden!`);
+        return newState;
+      }
+      
+      // Check level requirement
+      if (spellDef.minLevel && character.level < spellDef.minLevel) {
+        toast.error(`Du benötigst Level ${spellDef.minLevel} für ${action.spell}!`);
+        return newState;
+      }
       
       if (character.gold >= 50 && !character.zauber.includes(action.spell)) {
         character.gold -= 50;
         character.zauber.push(action.spell);
         toast.success(`Zauber gelernt: ${action.spell}`);
+      } else if (character.zauber.includes(action.spell)) {
+        toast.error(`Du beherrschst ${action.spell} bereits!`);
+      } else {
+        toast.error("Nicht genug Gold!");
       }
       
-      return newState;
+      return performAutoSave(newState);
     }
 
     case 'CHANGE_SCREEN':
@@ -682,6 +982,30 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         combatLog: [...state.combatLog, action.message]
       };
+      
+    case 'TOGGLE_AUTOSAVE':
+      return {
+        ...state,
+        autoSave: !state.autoSave
+      };
+      
+    case 'DISCOVER_LOCATION': {
+      newState = { ...state };
+      
+      if (newState.orteDetails[action.location]) {
+        newState.orteDetails[action.location].entdeckt = true;
+        
+        if (!newState.character.entdeckte_orte) {
+          newState.character.entdeckte_orte = [...state.orte];
+        }
+        
+        if (!newState.character.entdeckte_orte.includes(action.location)) {
+          newState.character.entdeckte_orte.push(action.location);
+        }
+      }
+      
+      return performAutoSave(newState);
+    }
 
     case 'SAVE_GAME': {
       const saveData = {
@@ -701,7 +1025,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         quest_log: state.character.quest_log,
         ausgeruestet: state.character.ausgeruestet,
         unverteilte_punkte: state.character.unverteilte_punkte,
-        statusEffekte: state.character.statusEffekte
+        statusEffekte: state.character.statusEffekte,
+        entdeckte_orte: state.character.entdeckte_orte
       };
       
       localStorage.setItem(`rpg_save_${state.character.name}`, JSON.stringify(saveData));
@@ -709,6 +1034,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       return {
         ...state,
+        letzteSpeicherung: Date.now(),
         loadedCharacters: [...new Set([...state.loadedCharacters, state.character.name])]
       };
     }
@@ -768,12 +1094,12 @@ const handleMonsterAttack = (state: GameState, monster: Monster): GameState => {
   if (character.hp <= 0) {
     character.hp = 1; // Prevent death
     character.gold = Math.max(0, character.gold - 20);
-    character.aktueller_ort = "Stadt";
+    character.aktueller_ort = "Hauptstadt";
     
     state.combatLog = [
       ...state.combatLog, 
       "Du wurdest besiegt!", 
-      "Du wachst in der Stadt auf und hast etwas Gold verloren..."
+      "Du wachst in der Hauptstadt auf und hast etwas Gold verloren..."
     ];
     state.currentMonster = null;
     state.gameScreen = 'main';
@@ -860,19 +1186,12 @@ const handleCombatVictory = (state: GameState, monster: Monster): GameState => {
       // Check if quest is complete
       if (quest.aktuelle_anzahl >= quest.ziel_anzahl) {
         quest.abgeschlossen = true;
-        character.gold += quest.belohnung_gold;
-        character.xp += quest.belohnung_xp;
         
         state.combatLog = [
           ...state.combatLog,
           `Quest "${quest.name}" abgeschlossen!`,
-          `Du erhältst ${quest.belohnung_gold} Gold und ${quest.belohnung_xp} XP!`
+          `Kehre zu ${quest.npc_empfaenger} zurück, um deine Belohnung abzuholen!`
         ];
-        
-        if (quest.belohnung_item) {
-          character.inventar.push(quest.belohnung_item);
-          state.combatLog = [...state.combatLog, `Du erhältst ${quest.belohnung_item.name}!`];
-        }
       } else {
         state.combatLog = [
           ...state.combatLog,
@@ -884,22 +1203,48 @@ const handleCombatVictory = (state: GameState, monster: Monster): GameState => {
   
   // Check for level up
   if (character.xp >= character.level * 100) {
-    character.level += 1;
-    character.max_hp += 20;
-    character.hp = character.max_hp;
-    
-    // Give stat points instead of increasing stats directly
-    character.unverteilte_punkte += 5;
-    
-    state.combatLog = [
-      ...state.combatLog, 
-      `Level Up! Du bist jetzt Level ${character.level}!`,
-      `Du erhältst 5 Statpunkte zum Verteilen!`
-    ];
+    state = handleLevelUp(state);
   }
   
   state.currentMonster = null;
   state.gameScreen = 'main';
+  return state;
+};
+
+// Helper function for level up
+const handleLevelUp = (state: GameState): GameState => {
+  const { character } = state;
+  character.level += 1;
+  character.max_hp += 20;
+  character.hp = character.max_hp;
+  
+  // Give stat points instead of increasing stats directly
+  character.unverteilte_punkte += 5;
+  
+  state.combatLog = [
+    ...state.combatLog, 
+    `Level Up! Du bist jetzt Level ${character.level}!`,
+    `Du erhältst 5 Statpunkte zum Verteilen!`
+  ];
+  
+  // Check if new locations can be discovered
+  Object.entries(state.orteDetails).forEach(([name, location]) => {
+    if (!location.entdeckt && location.minLevel && character.level >= location.minLevel) {
+      if (Math.random() < 0.3) { // 30% chance to discover on level up
+        location.entdeckt = true;
+        if (!character.entdeckte_orte) {
+          character.entdeckte_orte = [...state.orte];
+        }
+        character.entdeckte_orte.push(name);
+        
+        state.combatLog = [
+          ...state.combatLog,
+          `Du hast einen neuen Ort entdeckt: ${name}!`
+        ];
+      }
+    }
+  });
+  
   return state;
 };
 
@@ -945,6 +1290,17 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: 'CHANGE_SCREEN', screen: state.gameScreen });
     }
   }, []);
+
+  // Auto-save every 2 minutes if enabled
+  useEffect(() => {
+    if (state.autoSave && state.character.name) {
+      const intervalId = setInterval(() => {
+        dispatch({ type: 'SAVE_GAME' });
+      }, 120000); // 2 minutes
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [state.autoSave, state.character.name]);
 
   const loadSavedCharacters = () => {
     const characters: string[] = [];

@@ -1,168 +1,215 @@
 
 import React from 'react';
 import { useGameContext } from '../context/GameContext';
-import { Item } from '@/types/game';
 import { 
-  Sword,
-  Shield,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { 
+  Shield, 
+  Swords, 
+  Brain, 
   Axe,
   Backpack
 } from 'lucide-react';
+import { Progress } from "@/components/ui/progress";
 
 const CharacterUI: React.FC = () => {
-  const { state } = useGameContext();
+  const { state, dispatch } = useGameContext();
   const { character } = state;
+  
+  // Calculate XP progress to next level
+  const xpNeeded = character.level * 100;
+  const xpProgress = Math.min((character.xp / xpNeeded) * 100, 100);
 
-  const getEquipmentIcon = (type: string) => {
-    switch (type) {
-      case 'waffe':
-        return <Sword className="h-4 w-4 mr-1" />;
-      case 'ruestung':
-        return <Shield className="h-4 w-4 mr-1" />;
-      case 'helm':
-        return <Axe className="h-4 w-4 mr-1" />; // Using Axe icon for helm
-      case 'accessoire':
-        return <Backpack className="h-4 w-4 mr-1" />; // Using Backpack icon for accessory
-      default:
-        return null;
-    }
+  const handleAssignStatPoint = (attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung') => {
+    dispatch({ type: 'ASSIGN_STAT_POINT', attribute });
   };
-
-  const renderEquippedItem = (item: Item | null, type: string) => {
-    if (!item) {
-      return (
-        <div className="p-2 border border-dashed border-gray-300 rounded bg-white bg-opacity-40 text-gray-400 text-center text-sm">
-          {getEquipmentIcon(type)} Nichts ausgerüstet
-        </div>
-      );
+  
+  // Format equipment bonus text
+  const getEquipmentBonusText = (bonusType: string) => {
+    let totalBonus = 0;
+    
+    // Check each equipment slot
+    if (character.ausgeruestet.waffe && character.ausgeruestet.waffe.boni[bonusType]) {
+      totalBonus += character.ausgeruestet.waffe.boni[bonusType];
     }
-
-    return (
-      <div className="p-2 border border-rpg-secondary rounded bg-white bg-opacity-40">
-        <div className="flex items-center font-medium">
-          {getEquipmentIcon(type)} {item.name}
-        </div>
-        <div className="text-sm text-gray-600">{item.beschreibung}</div>
-        <div className="text-xs mt-1 flex flex-wrap gap-1">
-          {Object.entries(item.boni).map(([key, value]) => (
-            <span key={key} className="inline-block bg-rpg-secondary bg-opacity-20 px-1 rounded">
-              {key}: +{value}
-            </span>
-          ))}
-        </div>
-      </div>
-    );
+    if (character.ausgeruestet.ruestung && character.ausgeruestet.ruestung.boni[bonusType]) {
+      totalBonus += character.ausgeruestet.ruestung.boni[bonusType];
+    }
+    if (character.ausgeruestet.helm && character.ausgeruestet.helm.boni[bonusType]) {
+      totalBonus += character.ausgeruestet.helm.boni[bonusType];
+    }
+    if (character.ausgeruestet.accessoire && character.ausgeruestet.accessoire.boni[bonusType]) {
+      totalBonus += character.ausgeruestet.accessoire.boni[bonusType];
+    }
+    
+    return totalBonus > 0 ? `+${totalBonus}` : '';
   };
-
-  // Show unallocated stat points if available
-  const showStatPoints = character.unverteilte_punkte > 0;
 
   return (
-    <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-bold mb-2 border-b-2 border-rpg-secondary pb-1">Charakterstatus</h2>
-      
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-rpg-accent font-medium">Stärke:</span>
-          <div className="flex items-center">
-            <span>{character.staerke}</span>
-            {showStatPoints && (
-              <button 
-                className="ml-2 bg-rpg-accent text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
-                onClick={() => state.dispatch({ type: 'ASSIGN_STAT_POINT', attribute: 'staerke' })}
-              >
-                +
-              </button>
-            )}
+    <Card className="character-card mb-4">
+      <CardHeader className="pb-2">
+        <CardTitle>{character.name}</CardTitle>
+        <CardDescription>Level {character.level}</CardDescription>
+        <div className="flex justify-between text-xs mt-1 mb-1">
+          <span>XP: {character.xp}/{xpNeeded}</span>
+        </div>
+        <Progress value={xpProgress} />
+      </CardHeader>
+      <CardContent className="pb-2">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-2">
+          <div className="stat-block">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Shield size={16} className="mr-1" />
+                <span>HP:</span>
+              </div>
+              <span>{character.hp}/{character.max_hp}</span>
+            </div>
+            <Progress value={(character.hp / character.max_hp) * 100} className="h-2" />
+          </div>
+          <div className="stat-block">
+            <div className="flex items-center justify-between">
+              <span>Gold:</span>
+              <span className="text-yellow-500">{character.gold}</span>
+            </div>
+          </div>
+          <div className="stat-block">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Swords size={16} className="mr-1" />
+                <span>Stärke:</span>
+              </div>
+              <span>
+                {character.staerke} <span className="text-green-500">{getEquipmentBonusText('staerke')}</span>
+                {character.unverteilte_punkte > 0 && (
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="ml-1 h-5 w-5 rounded-full" 
+                    onClick={() => handleAssignStatPoint('staerke')}
+                  >
+                    +
+                  </Button>
+                )}
+              </span>
+            </div>
+          </div>
+          <div className="stat-block">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Brain size={16} className="mr-1" />
+                <span>Intelligenz:</span>
+              </div>
+              <span>
+                {character.intelligenz} <span className="text-green-500">{getEquipmentBonusText('intelligenz')}</span>
+                {character.unverteilte_punkte > 0 && (
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="ml-1 h-5 w-5 rounded-full" 
+                    onClick={() => handleAssignStatPoint('intelligenz')}
+                  >
+                    +
+                  </Button>
+                )}
+              </span>
+            </div>
+          </div>
+          <div className="stat-block">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                <span>Ausweichen:</span>
+              </div>
+              <span>
+                {character.ausweichen}% <span className="text-green-500">{getEquipmentBonusText('ausweichen')}</span>
+                {character.unverteilte_punkte > 0 && (
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="ml-1 h-5 w-5 rounded-full" 
+                    onClick={() => handleAssignStatPoint('ausweichen')}
+                  >
+                    +
+                  </Button>
+                )}
+              </span>
+            </div>
+          </div>
+          <div className="stat-block">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Shield size={16} className="mr-1" />
+                <span>Verteidigung:</span>
+              </div>
+              <span>
+                {character.verteidigung} <span className="text-green-500">{getEquipmentBonusText('verteidigung')}</span>
+                {character.unverteilte_punkte > 0 && (
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="ml-1 h-5 w-5 rounded-full" 
+                    onClick={() => handleAssignStatPoint('verteidigung')}
+                  >
+                    +
+                  </Button>
+                )}
+              </span>
+            </div>
+          </div>
+          {character.unverteilte_punkte > 0 && (
+            <div className="stat-block col-span-2">
+              <div className="text-center text-green-500 font-semibold">
+                Verfügbare Statpunkte: {character.unverteilte_punkte}
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="mt-3">
+          <h3 className="font-semibold text-sm mb-1">Ausrüstung:</h3>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+            <div className="equipment-slot flex items-center">
+              <Swords size={14} className="mr-1" />
+              <span>Waffe: {character.ausgeruestet.waffe ? character.ausgeruestet.waffe.name : "—"}</span>
+            </div>
+            <div className="equipment-slot flex items-center">
+              <Shield size={14} className="mr-1" />
+              <span>Rüstung: {character.ausgeruestet.ruestung ? character.ausgeruestet.ruestung.name : "—"}</span>
+            </div>
+            <div className="equipment-slot flex items-center">
+              <Axe size={14} className="mr-1" />
+              <span>Helm: {character.ausgeruestet.helm ? character.ausgeruestet.helm.name : "—"}</span>
+            </div>
+            <div className="equipment-slot flex items-center">
+              <Backpack size={14} className="mr-1" />
+              <span>Accessoire: {character.ausgeruestet.accessoire ? character.ausgeruestet.accessoire.name : "—"}</span>
+            </div>
           </div>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-rpg-accent font-medium">Intelligenz:</span>
-          <div className="flex items-center">
-            <span>{character.intelligenz}</span>
-            {showStatPoints && (
-              <button 
-                className="ml-2 bg-rpg-accent text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
-                onClick={() => state.dispatch({ type: 'ASSIGN_STAT_POINT', attribute: 'intelligenz' })}
-              >
-                +
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-rpg-accent font-medium">Ausweichen:</span>
-          <div className="flex items-center">
-            <span>{character.ausweichen}%</span>
-            {showStatPoints && (
-              <button 
-                className="ml-2 bg-rpg-accent text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
-                onClick={() => state.dispatch({ type: 'ASSIGN_STAT_POINT', attribute: 'ausweichen' })}
-              >
-                +
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-rpg-accent font-medium">Verteidigung:</span>
-          <div className="flex items-center">
-            <span>{character.verteidigung}</span>
-            {showStatPoints && (
-              <button 
-                className="ml-2 bg-rpg-accent text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
-                onClick={() => state.dispatch({ type: 'ASSIGN_STAT_POINT', attribute: 'verteidigung' })}
-              >
-                +
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center">
-          <span className="text-rpg-accent font-medium">Level:</span>
-          <span className="ml-2">{character.level}</span>
-        </div>
-        {showStatPoints && (
-          <div className="flex items-center text-green-600 font-semibold">
-            <span>Freie Punkte:</span>
-            <span className="ml-2">{character.unverteilte_punkte}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-2">
-        <h3 className="font-semibold text-rpg-primary border-b border-rpg-secondary pb-1">Ausgerüstet</h3>
-        <div className="grid grid-cols-1 gap-2 mt-2">
-          {renderEquippedItem(character.ausgeruestet.waffe, 'waffe')}
-          {renderEquippedItem(character.ausgeruestet.ruestung, 'ruestung')}
-          {renderEquippedItem(character.ausgeruestet.helm, 'helm')}
-          {renderEquippedItem(character.ausgeruestet.accessoire, 'accessoire')}
-        </div>
-      </div>
-
-      {character.zauber.length > 0 && (
-        <div className="mt-2">
-          <h3 className="font-semibold text-rpg-primary border-b border-rpg-secondary pb-1">Zauber</h3>
-          <div className="flex flex-wrap gap-1 mt-2">
-            {character.zauber.map((zauber, index) => {
-              const zauberDef = state.zauberDefinitionen[zauber];
-              return (
-                <div 
-                  key={index} 
-                  className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm"
-                  title={zauberDef?.beschreibung || ""}
-                >
+        
+        <div className="mt-3">
+          <h3 className="font-semibold text-sm mb-1">Zauber:</h3>
+          <div className="flex flex-wrap gap-1">
+            {character.zauber.length > 0 ? (
+              character.zauber.map((zauber, i) => (
+                <span key={i} className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">
                   {zauber}
-                  {zauberDef?.statusEffekt && (
-                    <span className="ml-1 text-xs">({zauberDef.statusEffekt})</span>
-                  )}
-                </div>
-              );
-            })}
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-500 italic text-xs">Keine Zauber gelernt</span>
+            )}
           </div>
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

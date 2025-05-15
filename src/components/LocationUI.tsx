@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const LocationUI: React.FC = () => {
   const { state, dispatch } = useGameContext();
-  const { character, orte } = state;
+  const { character, orteDetails } = state;
   const [dialogContent, setDialogContent] = useState<{
     type: 'travel' | 'shop' | 'training' | 'npc';
     title: string;
@@ -24,6 +24,15 @@ const LocationUI: React.FC = () => {
     title: '',
     open: false
   });
+
+  // Calculate training costs
+  const getTrainingCost = (attribute: string) => {
+    const basePrice = state.trainingCosts.basis;
+    const multiplier = state.trainingCosts.multiplikator;
+    
+    const cost = Math.floor(basePrice * (1 + ((character.level - 1) * multiplier)));
+    return cost;
+  };
 
   const handleTravel = (location: string) => {
     dispatch({ type: 'TRAVEL_TO', location });
@@ -65,8 +74,12 @@ const LocationUI: React.FC = () => {
   const handleBuyItem = (item: any) => {
     dispatch({ type: 'BUY_ITEM', item });
   };
+  
+  const handleSellItem = (itemIndex: number, npc: string) => {
+    dispatch({ type: 'SELL_ITEM', itemIndex, npc });
+  };
 
-  const handleTrainAttribute = (attribute: 'staerke' | 'intelligenz' | 'ausweichen') => {
+  const handleTrainAttribute = (attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung') => {
     dispatch({ type: 'TRAIN_ATTRIBUTE', attribute });
   };
 
@@ -74,9 +87,22 @@ const LocationUI: React.FC = () => {
     dispatch({ type: 'LEARN_SPELL', spell });
   };
 
+  const handleTakeQuest = (quest: any, npc: string) => {
+    dispatch({ type: 'TAKE_QUEST', quest, npc });
+  };
+  
+  const handleCompleteQuest = (questIndex: number, npc: string) => {
+    dispatch({ type: 'COMPLETE_QUEST', questIndex, npc });
+  };
+
+  // Get available spells based on character level
   const getAvailableSpells = () => {
-    const allSpells = ["Feuerball", "Eisstrahl", "Heilung", "Blitz"];
-    return allSpells.filter(spell => !character.zauber.includes(spell));
+    const allSpells = Object.entries(state.zauberDefinitionen)
+      .filter(([_, spell]) => !character.zauber.includes(_.toString()))
+      .filter(([_, spell]) => !spell.minLevel || character.level >= spell.minLevel)
+      .map(([name, _]) => name);
+    
+    return allSpells;
   };
 
   // Get NPCs for current location
@@ -84,39 +110,23 @@ const LocationUI: React.FC = () => {
     npc => npc.ort === character.aktueller_ort
   );
 
+  // Get discoverable locations the character can travel to
+  const availableLocations = Object.entries(orteDetails)
+    .filter(([name, location]) => location.entdeckt)
+    .map(([name, _]) => name);
+
+  // Check if location is a settlement (city or village)
+  const isSettlement = orteDetails[character.aktueller_ort]?.istDorf === true || 
+                      character.aktueller_ort === "Hauptstadt";
+
   return (
     <div className="p-2">
       <h2 className="text-2xl font-bold mb-4">{character.aktueller_ort}</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="location-description parchment p-4">
-          {character.aktueller_ort === 'Stadt' ? (
-            <p>
-              Die Stadt ist ein geschäftiger Ort mit vielen Händlern, einer Akademie für Training 
-              und verschiedenen NPCs, mit denen du interagieren kannst.
-            </p>
-          ) : character.aktueller_ort === 'Wald' ? (
-            <p>
-              Der Wald ist dicht und voller Leben. Du könntest hier auf Goblins, Wölfe, Banditen 
-              und Waldspinnen treffen.
-            </p>
-          ) : character.aktueller_ort === 'Berge' ? (
-            <p>
-              Die Berge sind rau und gefährlich. Hier leben Bergtrolle, Harpyien und Steingolems.
-            </p>
-          ) : character.aktueller_ort === 'See' ? (
-            <p>
-              Der See ist ruhig und schön, aber unter der Oberfläche lauern Wassernixen, Seeschlangen 
-              und sogar ein riesiger Krake.
-            </p>
-          ) : character.aktueller_ort === 'Höhle' ? (
-            <p>
-              Die Höhle ist dunkel und feucht. Hier leben Fledermäuse, Höhlentrolle und große Höhlenspinnen.
-            </p>
-          ) : (
-            <p>
-              Die Wüste ist heiß und unwirtlich. Hier findest du Skorpione, Sandwürmer und uralte Mumien.
-            </p>
+          {orteDetails[character.aktueller_ort]?.beschreibung || (
+            <p>Eine interessante Gegend mit vielen Möglichkeiten.</p>
           )}
         </div>
 
@@ -125,7 +135,7 @@ const LocationUI: React.FC = () => {
             Reisen
           </Button>
           
-          {character.aktueller_ort === 'Stadt' && (
+          {isSettlement && (
             <>
               <Button className="rpg-button" onClick={handleShopClick}>
                 Shop
@@ -139,7 +149,7 @@ const LocationUI: React.FC = () => {
             </>
           )}
           
-          {character.aktueller_ort !== 'Stadt' && (
+          {!isSettlement && (
             <Button 
               className="rpg-button bg-red-700 hover:bg-red-800" 
               onClick={() => {
@@ -147,6 +157,19 @@ const LocationUI: React.FC = () => {
                 const possibleMonsters = state.monsters[character.aktueller_ort] || [];
                 if (possibleMonsters.length > 0) {
                   const monster = { ...possibleMonsters[Math.floor(Math.random() * possibleMonsters.length)] };
+                  
+                  // Apply level adjustment if location has monster level
+                  if (orteDetails[character.aktueller_ort]?.monsterLevel) {
+                    const level = orteDetails[character.aktueller_ort].monsterLevel;
+                    monster.level = level;
+                    monster.max_hp += (level - 1) * 10;
+                    monster.hp = monster.max_hp;
+                    monster.staerke += Math.floor((level - 1) * 1.5);
+                    monster.verteidigung = monster.verteidigung || Math.floor(monster.staerke * 0.2);
+                    monster.verteidigung += Math.floor((level - 1) * 0.5);
+                    monster.xp += (level - 1) * 5;
+                  }
+                  
                   dispatch({ type: 'START_COMBAT', monster });
                 }
               }}
@@ -168,58 +191,150 @@ const LocationUI: React.FC = () => {
           </DialogHeader>
           
           {dialogContent.type === 'travel' && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {orte.map(ort => (
-                <Button
-                  key={ort}
-                  className={`rpg-button ${ort === character.aktueller_ort ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={ort === character.aktueller_ort}
-                  onClick={() => handleTravel(ort)}
-                >
-                  {ort}
-                </Button>
-              ))}
-            </div>
-          )}
-          
-          {dialogContent.type === 'shop' && (
-            <div className="space-y-4">
-              <p>Verfügbare Items im Shop:</p>
-              
+            <div>
               <ScrollArea className="h-[60vh]">
-                <div className="grid gap-3 pr-4">
-                  {Object.values(state.items).map((item, index) => (
-                    <Card key={index} className="bg-white bg-opacity-80">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h3 className="font-semibold">{item.name}</h3>
-                            <p className="text-sm text-gray-600">{item.beschreibung}</p>
-                            <div className="text-xs mt-1">
-                              {Object.entries(item.boni).map(([key, value]) => (
-                                <span key={key} className="inline-block mr-2 bg-gray-100 px-1 rounded">
-                                  {key}: +{value}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <span className="text-yellow-600 font-semibold">{item.preis} Gold</span>
-                            <Button 
-                              className="rpg-button text-sm py-1 px-2"
-                              onClick={() => handleBuyItem(item)}
-                              disabled={character.gold < item.preis}
-                            >
-                              Kaufen
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pr-4">
+                  {availableLocations.map(ort => (
+                    <Button
+                      key={ort}
+                      className={`rpg-button ${ort === character.aktueller_ort ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={ort === character.aktueller_ort}
+                      onClick={() => handleTravel(ort)}
+                    >
+                      {ort}
+                    </Button>
                   ))}
                 </div>
               </ScrollArea>
             </div>
+          )}
+          
+          {dialogContent.type === 'shop' && (
+            <Tabs defaultValue="buy">
+              <TabsList className="w-full">
+                <TabsTrigger value="buy" className="flex-1">Kaufen</TabsTrigger>
+                <TabsTrigger value="sell" className="flex-1">Verkaufen</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="buy">
+                <div className="space-y-4">
+                  <p>Verfügbare Items im Shop:</p>
+                  
+                  <ScrollArea className="h-[60vh]">
+                    <div className="grid gap-3 pr-4">
+                      {Object.values(state.items)
+                        .filter(item => !item.minLevel || character.level >= item.minLevel)
+                        .map((item, index) => (
+                        <Card key={index} className="bg-white bg-opacity-80">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h3 className="font-semibold">{item.name}</h3>
+                                <p className="text-sm text-gray-600">{item.beschreibung}</p>
+                                {item.minLevel && (
+                                  <p className="text-xs text-blue-600">Benötigt Level {item.minLevel}</p>
+                                )}
+                                <div className="text-xs mt-1">
+                                  {Object.entries(item.boni).map(([key, value]) => (
+                                    <span key={key} className="inline-block mr-2 bg-gray-100 px-1 rounded">
+                                      {key}: +{value}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <span className="text-yellow-600 font-semibold">{item.preis} Gold</span>
+                                <Button 
+                                  className="rpg-button text-sm py-1 px-2"
+                                  onClick={() => handleBuyItem(item)}
+                                  disabled={character.gold < item.preis || (item.minLevel && character.level < item.minLevel)}
+                                >
+                                  Kaufen
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="sell">
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <p>Dein Inventar:</p>
+                    <p className="text-yellow-600 font-semibold">Gold: {character.gold}</p>
+                  </div>
+                  
+                  <ScrollArea className="h-[60vh]">
+                    <div className="grid gap-3 pr-4">
+                      {character.inventar.length > 0 ? (
+                        character.inventar.map((item, index) => {
+                          // Calculate sell price
+                          const sellPrice = item.verkaufspreis || Math.floor(item.preis * 0.5);
+                          
+                          // Check if item is equipped
+                          const isEquipped = 
+                            character.ausgeruestet.waffe === item ||
+                            character.ausgeruestet.ruestung === item ||
+                            character.ausgeruestet.helm === item ||
+                            character.ausgeruestet.accessoire === item;
+                          
+                          return (
+                            <Card key={index} className={`bg-white bg-opacity-80 ${isEquipped ? 'border-2 border-blue-400' : ''}`}>
+                              <CardContent className="p-4">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <h3 className="font-semibold">
+                                      {item.name}
+                                      {isEquipped && <span className="text-xs text-blue-600 ml-2">(Ausgerüstet)</span>}
+                                    </h3>
+                                    <p className="text-sm text-gray-600">{item.beschreibung}</p>
+                                    <div className="text-xs mt-1">
+                                      {Object.entries(item.boni).map(([key, value]) => (
+                                        <span key={key} className="inline-block mr-2 bg-gray-100 px-1 rounded">
+                                          {key}: +{value}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-col items-end gap-2">
+                                    <span className="text-yellow-600 font-semibold">{sellPrice} Gold</span>
+                                    <div className="flex gap-1">
+                                      {locationNpcs.map((npc, npcIdx) => {
+                                        // Check if NPC buys this type of item
+                                        const buysItem = npc.kauft && 
+                                          (npc.kauft.includes(item.typ) || npc.kauft.includes('*'));
+                                        
+                                        return buysItem ? (
+                                          <Button 
+                                            key={npcIdx}
+                                            className="rpg-button text-xs py-0.5 px-1"
+                                            onClick={() => handleSellItem(index, npc.name)}
+                                            disabled={isEquipped}
+                                            title={isEquipped ? "Ausgerüstete Items können nicht verkauft werden" : ""}
+                                          >
+                                            An {npc.name.split(' ')[0]} verkaufen
+                                          </Button>
+                                        ) : null;
+                                      })}
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })
+                      ) : (
+                        <p className="text-center italic">Dein Inventar ist leer</p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </TabsContent>
+            </Tabs>
           )}
           
           {dialogContent.type === 'training' && (
@@ -236,55 +351,73 @@ const LocationUI: React.FC = () => {
                     <span className="text-yellow-600 font-semibold">{character.gold}</span>
                   </div>
                   
-                  <div className="grid gap-3">
-                    <Card>
-                      <CardContent className="p-4 flex justify-between items-center">
-                        <div>
-                          <h3 className="font-semibold">Stärke</h3>
-                          <p className="text-sm">Aktuell: {character.staerke}</p>
-                        </div>
-                        <Button 
-                          className="rpg-button" 
-                          onClick={() => handleTrainAttribute('staerke')}
-                          disabled={character.gold < 20}
-                        >
-                          Trainieren (20 Gold)
-                        </Button>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-4 flex justify-between items-center">
-                        <div>
-                          <h3 className="font-semibold">Intelligenz</h3>
-                          <p className="text-sm">Aktuell: {character.intelligenz}</p>
-                        </div>
-                        <Button 
-                          className="rpg-button" 
-                          onClick={() => handleTrainAttribute('intelligenz')}
-                          disabled={character.gold < 20}
-                        >
-                          Trainieren (20 Gold)
-                        </Button>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-4 flex justify-between items-center">
-                        <div>
-                          <h3 className="font-semibold">Ausweichen</h3>
-                          <p className="text-sm">Aktuell: {character.ausweichen}%</p>
-                        </div>
-                        <Button 
-                          className="rpg-button" 
-                          onClick={() => handleTrainAttribute('ausweichen')}
-                          disabled={character.gold < 20}
-                        >
-                          Trainieren (20 Gold)
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <ScrollArea className="h-[50vh]">
+                    <div className="grid gap-3 pr-4">
+                      <Card>
+                        <CardContent className="p-4 flex justify-between items-center">
+                          <div>
+                            <h3 className="font-semibold">Stärke</h3>
+                            <p className="text-sm">Aktuell: {character.staerke}</p>
+                          </div>
+                          <Button 
+                            className="rpg-button" 
+                            onClick={() => handleTrainAttribute('staerke')}
+                            disabled={character.gold < getTrainingCost('staerke')}
+                          >
+                            Trainieren ({getTrainingCost('staerke')} Gold)
+                          </Button>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="p-4 flex justify-between items-center">
+                          <div>
+                            <h3 className="font-semibold">Intelligenz</h3>
+                            <p className="text-sm">Aktuell: {character.intelligenz}</p>
+                          </div>
+                          <Button 
+                            className="rpg-button" 
+                            onClick={() => handleTrainAttribute('intelligenz')}
+                            disabled={character.gold < getTrainingCost('intelligenz')}
+                          >
+                            Trainieren ({getTrainingCost('intelligenz')} Gold)
+                          </Button>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="p-4 flex justify-between items-center">
+                          <div>
+                            <h3 className="font-semibold">Ausweichen</h3>
+                            <p className="text-sm">Aktuell: {character.ausweichen}%</p>
+                          </div>
+                          <Button 
+                            className="rpg-button" 
+                            onClick={() => handleTrainAttribute('ausweichen')}
+                            disabled={character.gold < getTrainingCost('ausweichen')}
+                          >
+                            Trainieren ({getTrainingCost('ausweichen')} Gold)
+                          </Button>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="p-4 flex justify-between items-center">
+                          <div>
+                            <h3 className="font-semibold">Verteidigung</h3>
+                            <p className="text-sm">Aktuell: {character.verteidigung}</p>
+                          </div>
+                          <Button 
+                            className="rpg-button" 
+                            onClick={() => handleTrainAttribute('verteidigung')}
+                            disabled={character.gold < getTrainingCost('verteidigung')}
+                          >
+                            Trainieren ({getTrainingCost('verteidigung')} Gold)
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </ScrollArea>
                 </div>
               </TabsContent>
               
@@ -298,30 +431,30 @@ const LocationUI: React.FC = () => {
                     
                     <div className="grid gap-3">
                       {getAvailableSpells().length > 0 ? (
-                        getAvailableSpells().map((spell, index) => (
-                          <Card key={index}>
-                            <CardContent className="p-4 flex justify-between items-center">
-                              <div>
-                                <h3 className="font-semibold">{spell}</h3>
-                                <p className="text-sm text-gray-600">
-                                  Ein mächtiger Zauber, der {
-                                    spell === "Feuerball" ? "Feuerschaden verursacht" :
-                                    spell === "Eisstrahl" ? "Gegner einfriert" :
-                                    spell === "Heilung" ? "deine Gesundheit regeneriert" :
-                                    "Blitzschaden verursacht"
-                                  }
-                                </p>
-                              </div>
-                              <Button 
-                                className="rpg-button" 
-                                onClick={() => handleLearnSpell(spell)}
-                                disabled={character.gold < 50}
-                              >
-                                Lernen (50 Gold)
-                              </Button>
-                            </CardContent>
-                          </Card>
-                        ))
+                        getAvailableSpells().map((spell, index) => {
+                          const spellDef = state.zauberDefinitionen[spell];
+                          
+                          return (
+                            <Card key={index}>
+                              <CardContent className="p-4 flex justify-between items-center">
+                                <div>
+                                  <h3 className="font-semibold">{spell}</h3>
+                                  <p className="text-sm text-gray-600">{spellDef.beschreibung}</p>
+                                  {spellDef.minLevel && (
+                                    <p className="text-xs text-blue-600">Benötigt Level {spellDef.minLevel}</p>
+                                  )}
+                                </div>
+                                <Button 
+                                  className="rpg-button" 
+                                  onClick={() => handleLearnSpell(spell)}
+                                  disabled={character.gold < 50 || (spellDef.minLevel && character.level < spellDef.minLevel)}
+                                >
+                                  Lernen (50 Gold)
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          );
+                        })
                       ) : (
                         <p className="text-center italic">Du kennst bereits alle verfügbaren Zauber</p>
                       )}
@@ -346,6 +479,7 @@ const LocationUI: React.FC = () => {
                           <TabsList className="w-full">
                             <TabsTrigger value="talk" className="flex-1">Gespräch</TabsTrigger>
                             <TabsTrigger value="trade" className="flex-1">Handel</TabsTrigger>
+                            <TabsTrigger value="quests" className="flex-1">Quests</TabsTrigger>
                           </TabsList>
                           
                           <TabsContent value="talk" className="p-2">
@@ -359,6 +493,9 @@ const LocationUI: React.FC = () => {
                                   <div>
                                     <div className="font-medium">{item.name}</div>
                                     <div className="text-xs text-gray-600">{item.beschreibung}</div>
+                                    {item.minLevel && (
+                                      <div className="text-xs text-blue-600">Benötigt Level {item.minLevel}</div>
+                                    )}
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span className="text-yellow-600 font-semibold">{item.preis}</span>
@@ -366,13 +503,111 @@ const LocationUI: React.FC = () => {
                                       size="sm"
                                       className="rpg-button text-sm py-1"
                                       onClick={() => handleBuyItem(item)}
-                                      disabled={character.gold < item.preis}
+                                      disabled={character.gold < item.preis || (item.minLevel && character.level < item.minLevel)}
                                     >
                                       Kaufen
                                     </Button>
                                   </div>
                                 </div>
                               ))}
+                            </div>
+                          </TabsContent>
+                          
+                          <TabsContent value="quests">
+                            <div className="space-y-4 py-2">
+                              <div className="font-medium mb-2">Verfügbare Quests:</div>
+                              
+                              {/* Available quests from this NPC */}
+                              {state.quests
+                                .filter(quest => !character.quest_log.some(q => q.name === quest.name))
+                                .map((quest, idx) => (
+                                  <div key={idx} className="border-b pb-3">
+                                    <div className="font-medium">{quest.name}</div>
+                                    <div className="text-sm text-gray-600 mb-2">{quest.beschreibung}</div>
+                                    <div className="text-xs flex justify-between mb-1">
+                                      <span>Belohnungen:</span>
+                                      <span>{quest.belohnung_gold} Gold, {quest.belohnung_xp} XP</span>
+                                    </div>
+                                    {quest.belohnung_item && (
+                                      <div className="text-xs flex justify-between mb-2">
+                                        <span>Item:</span>
+                                        <span>{quest.belohnung_item.name}</span>
+                                      </div>
+                                    )}
+                                    <Button 
+                                      size="sm" 
+                                      className="rpg-button w-full mt-1" 
+                                      onClick={() => handleTakeQuest(quest, npc.name)}
+                                    >
+                                      Quest annehmen
+                                    </Button>
+                                  </div>
+                                ))
+                              }
+                              
+                              {/* Completed quests that can be turned in to this NPC */}
+                              <div className="font-medium mb-2 mt-4">Abgeschlossene Quests:</div>
+                              {character.quest_log
+                                .filter(quest => quest.abgeschlossen && quest.npc_empfaenger === npc.name)
+                                .map((quest, idx) => {
+                                  const questIndex = character.quest_log.findIndex(q => q.name === quest.name);
+                                  
+                                  return (
+                                    <div key={idx} className="border-b pb-3">
+                                      <div className="font-medium">{quest.name}</div>
+                                      <div className="text-sm text-gray-600 mb-2">{quest.beschreibung}</div>
+                                      <div className="text-xs flex justify-between mb-1">
+                                        <span>Belohnungen:</span>
+                                        <span>{quest.belohnung_gold} Gold, {quest.belohnung_xp} XP</span>
+                                      </div>
+                                      {quest.belohnung_item && (
+                                        <div className="text-xs flex justify-between mb-2">
+                                          <span>Item:</span>
+                                          <span>{quest.belohnung_item.name}</span>
+                                        </div>
+                                      )}
+                                      <Button 
+                                        size="sm" 
+                                        className="rpg-button w-full mt-1 bg-green-600 hover:bg-green-700" 
+                                        onClick={() => handleCompleteQuest(questIndex, npc.name)}
+                                      >
+                                        Belohnung abholen
+                                      </Button>
+                                    </div>
+                                  );
+                                })
+                              }
+                              
+                              {/* Active quests from this NPC */}
+                              <div className="font-medium mb-2 mt-4">Aktive Quests:</div>
+                              {character.quest_log
+                                .filter(quest => !quest.abgeschlossen && quest.npc_geber === npc.name)
+                                .map((quest, idx) => (
+                                  <div key={idx} className="border-b pb-3">
+                                    <div className="font-medium">{quest.name}</div>
+                                    <div className="text-sm text-gray-600 mb-2">{quest.beschreibung}</div>
+                                    <div className="text-xs flex justify-between mb-1">
+                                      <span>Fortschritt:</span>
+                                      <span>{quest.aktuelle_anzahl}/{quest.ziel_anzahl}</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                      <div 
+                                        className="bg-green-600 h-1.5 rounded-full" 
+                                        style={{ width: `${(quest.aktuelle_anzahl / quest.ziel_anzahl) * 100}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ))
+                              }
+                              
+                              {/* No quests message */}
+                              {!state.quests.some(quest => !character.quest_log.some(q => q.name === quest.name)) && 
+                               !character.quest_log.some(quest => quest.npc_geber === npc.name || 
+                                                       (quest.abgeschlossen && quest.npc_empfaenger === npc.name)) && (
+                                <div className="text-center italic">
+                                  {npc.name} hat derzeit keine Quests für dich.
+                                </div>
+                              )}
                             </div>
                           </TabsContent>
                         </Tabs>
@@ -392,4 +627,3 @@ const LocationUI: React.FC = () => {
 };
 
 export default LocationUI;
-
