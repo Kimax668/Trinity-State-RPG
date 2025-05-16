@@ -133,7 +133,8 @@ const initialState: GameState = {
   trainingCosts: {
     basis: 20,
     multiplikator: 0.5 // +50% cost per level
-  }
+  },
+  zauberkostenFaktor: 10 // Base factor for spell costs
 };
 
 // Function to generate a unique ID
@@ -235,9 +236,39 @@ const applyStatusEffect = (
   return updatedEntity;
 };
 
-// Calculate training cost based on character level
-const calculateTrainingCost = (level: number, baseCost: number, multiplier: number): number => {
-  return Math.floor(baseCost * (1 + ((level - 1) * multiplier)));
+// Calculate training cost based on character level and number of times trained
+const calculateTrainingCost = (level: number, baseCost: number, multiplier: number, trainingCount: number = 0): number => {
+  // Base cost scaled by level
+  const levelCost = Math.floor(baseCost * (1 + ((level - 1) * multiplier)));
+  
+  // Additional cost increase based on how many times this attribute has been trained
+  const trainingMultiplier = 1 + (trainingCount * 0.25); // +25% per training
+  
+  return Math.floor(levelCost * trainingMultiplier);
+};
+
+// Calculate spell learning cost based on level, spell power, and price factor
+const calculateSpellCost = (level: number, spellDef: any, baseFactor: number): number => {
+  // Base cost determined by character level and base factor
+  let cost = baseFactor * (1 + (level * 0.2));
+  
+  // Adjust for spell level requirement
+  if (spellDef.minLevel) {
+    cost *= (1 + ((spellDef.minLevel - 1) * 0.1));
+  }
+  
+  // Adjust for spell price factor if defined
+  if (spellDef.preisFaktor) {
+    cost *= spellDef.preisFaktor;
+  }
+  
+  // Adjust for spell power (damage or healing)
+  if (spellDef.schaden || spellDef.heilung) {
+    const power = Math.max(spellDef.schaden || 0, spellDef.heilung || 0);
+    cost *= (1 + (power * 0.01));
+  }
+  
+  return Math.floor(cost);
 };
 
 // Check if character can discover a new location based on level
@@ -312,7 +343,14 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'CREATE_CHARACTER': {
       const character = createInitialCharacter(action.name);
-      // No starting items anymore
+      // Initialize attribute training count
+      character.attributeTrainingCount = {
+        staerke: 0,
+        intelligenz: 0,
+        ausweichen: 0,
+        verteidigung: 0
+      };
+      
       newState = {
         ...state,
         character,
@@ -326,6 +364,16 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       const character = action.character;
       if (!character.entdeckte_orte) {
         character.entdeckte_orte = ["Hauptstadt", "Wald", "Berge", "See", "Höhle", "Wüste"];
+      }
+      
+      // Initialize attributeTrainingCount if missing
+      if (!character.attributeTrainingCount) {
+        character.attributeTrainingCount = {
+          staerke: 0,
+          intelligenz: 0,
+          ausweichen: 0,
+          verteidigung: 0
+        };
       }
       
       // Copy discovered locations to orteDetails
@@ -823,14 +871,17 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'USE_INVENTORY_ITEM': {
       newState = { ...state };
       const { character } = newState;
-      const item = character.inventar[action.itemIndex];
       
-      if (item && item.typ === "verbrauchbar") {
-        if (item.boni.heilung) {
-          const healAmount = item.boni.heilung;
-          character.hp = Math.min(character.hp + healAmount, character.max_hp);
-          character.inventar.splice(action.itemIndex, 1);
-          toast.success(`Du wurdest um ${healAmount} HP geheilt!`);
+      if (action.itemIndex >= 0 && action.itemIndex < character.inventar.length) {
+        const item = character.inventar[action.itemIndex];
+        
+        if (item && item.typ === "verbrauchbar") {
+          if (item.boni.heilung) {
+            const healAmount = item.boni.heilung;
+            character.hp = Math.min(character.hp + healAmount, character.max_hp);
+            character.inventar.splice(action.itemIndex, 1);
+            toast.success(`Du wurdest um ${healAmount} HP geheilt!`);
+          }
         }
       }
       
@@ -913,16 +964,30 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       newState = { ...state };
       const { character } = newState;
       
-      // Calculate training cost based on level
+      // Ensure attributeTrainingCount exists
+      if (!character.attributeTrainingCount) {
+        character.attributeTrainingCount = {
+          staerke: 0,
+          intelligenz: 0,
+          ausweichen: 0,
+          verteidigung: 0
+        };
+      }
+      
+      // Calculate training cost based on level and number of times trained
+      const trainingCount = character.attributeTrainingCount[action.attribute] || 0;
       const cost = calculateTrainingCost(
         character.level, 
         state.trainingCosts.basis, 
-        state.trainingCosts.multiplikator
+        state.trainingCosts.multiplikator,
+        trainingCount
       );
       
       if (character.gold >= cost) {
         character.gold -= cost;
         character[action.attribute] += 1;
+        // Increment training count for this attribute
+        character.attributeTrainingCount[action.attribute] = trainingCount + 1;
         toast.success(`${action.attribute} erhöht! (Kosten: ${cost} Gold)`);
       } else {
         toast.error(`Nicht genug Gold! (Benötigt: ${cost} Gold)`);
@@ -962,14 +1027,17 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         return newState;
       }
       
-      if (character.gold >= 50 && !character.zauber.includes(action.spell)) {
-        character.gold -= 50;
+      // Calculate spell cost based on level and spell properties
+      const spellCost = calculateSpellCost(character.level, spellDef, state.zauberkostenFaktor);
+      
+      if (character.gold >= spellCost && !character.zauber.includes(action.spell)) {
+        character.gold -= spellCost;
         character.zauber.push(action.spell);
-        toast.success(`Zauber gelernt: ${action.spell}`);
+        toast.success(`Zauber gelernt: ${action.spell} (Kosten: ${spellCost} Gold)`);
       } else if (character.zauber.includes(action.spell)) {
         toast.error(`Du beherrschst ${action.spell} bereits!`);
       } else {
-        toast.error("Nicht genug Gold!");
+        toast.error(`Nicht genug Gold! (Benötigt: ${spellCost} Gold)`);
       }
       
       return performAutoSave(newState);

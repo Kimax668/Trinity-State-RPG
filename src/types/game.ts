@@ -87,6 +87,7 @@ export interface Character {
     schaden?: number;
   }[];
   entdeckte_orte?: string[]; // Discovered locations
+  attributeTrainingCount?: Record<string, number>; // Track training count per attribute
 }
 
 export interface Location {
@@ -117,6 +118,7 @@ export type GameState = {
     basis: number,         // Base cost
     multiplikator: number  // Multiplier per level
   };
+  zauberkostenFaktor: number; // Factor for spell cost calculation
   letzteSpeicherung?: number; // Timestamp of last autosave
 };
 
@@ -131,7 +133,7 @@ export interface ZauberDefinition {
   statusEffekt?: string;   // Status effect applied (burning, freezing, etc.)
   statusDauer?: number;    // Duration of status effect in turns
   minLevel?: number;       // Minimum level requirement
-  verfuegbarkeit?: "stadt" | "npc_quest" | "npc_teach" | "npc_drop"; // Where spell can be obtained
+  verfuegbarkeit?: "stadt" | "npc_quest" | "npc_drop" | "npc_teach"; // Where spell can be obtained
   lehrer?: string;         // NPC who teaches this spell
   questgeber?: string;     // NPC who gives quest for this spell
   monsterDrop?: string;    // Monster that drops this spell
@@ -140,6 +142,7 @@ export interface ZauberDefinition {
   selbstSchaden?: number;  // Self-damage for powerful spells
   statusCleanse?: boolean; // Whether spell cleans status effects
   extraAktion?: boolean;   // Whether spell gives an extra action
+  preisFaktor?: number;    // Price multiplier for the spell (1.0 = standard)
 }
 
 export type GameAction =
