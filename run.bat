@@ -1,6 +1,6 @@
 
 @echo off
-echo Starting Fantasy RPG...
+echo Starting Trinity-State-RPG...
 echo.
 
 :: Check if the portable Node.js is already included

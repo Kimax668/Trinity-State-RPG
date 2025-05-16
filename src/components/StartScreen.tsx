@@ -32,12 +32,12 @@ const StartScreen: React.FC = () => {
       <div className="w-full max-w-md">
         <Card className="parchment border-2 border-rpg-primary">
           <CardHeader className="text-center border-b-2 border-rpg-secondary pb-4">
-            <CardTitle className="text-3xl font-bold text-rpg-primary">Fantasy RPG</CardTitle>
+            <CardTitle className="text-3xl font-bold text-rpg-primary">Trinity-State-RPG</CardTitle>
           </CardHeader>
           
           {screen === 'main' && (
             <CardContent className="pt-6 space-y-4">
-              <h2 className="text-xl text-center font-semibold">Willkommen im Fantasy RPG</h2>
+              <h2 className="text-xl text-center font-semibold">Willkommen im Trinity-State-RPG</h2>
               <p className="text-center text-gray-700">
                 Begib dich auf ein Abenteuer in einer Welt voller Monster, Magie und Schätze!
               </p>
