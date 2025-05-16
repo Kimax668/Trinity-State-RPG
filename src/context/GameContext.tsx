@@ -1118,11 +1118,13 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 
 // Check if an item is equipped
 const isItemEquipped = (item: Item, equipment: Equipment): boolean => {
+  if (!item.id) return false; // If no ID, can't be equipped
+  
   return (
-    equipment.waffe === item ||
-    equipment.ruestung === item ||
-    equipment.helm === item ||
-    equipment.accessoire === item
+    (equipment.waffe && equipment.waffe.id === item.id) ||
+    (equipment.ruestung && equipment.ruestung.id === item.id) ||
+    (equipment.helm && equipment.helm.id === item.id) ||
+    (equipment.accessoire && equipment.accessoire.id === item.id)
   );
 };
 

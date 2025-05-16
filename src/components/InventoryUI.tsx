@@ -44,7 +44,9 @@ const InventoryUI: React.FC = () => {
   const isItemEquipped = (item: Item, index: number): boolean => {
     const { ausgeruestet } = character;
     
-    // Compare by item reference from inventory rather than by name
+    // Compare by item ID to ensure only the specific item instance is checked
+    if (!item.id) return false; // If no ID, can't be equipped
+    
     if (ausgeruestet.waffe && ausgeruestet.waffe.id === item.id) return true;
     if (ausgeruestet.ruestung && ausgeruestet.ruestung.id === item.id) return true;
     if (ausgeruestet.helm && ausgeruestet.helm.id === item.id) return true;
