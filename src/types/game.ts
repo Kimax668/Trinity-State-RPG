@@ -1,4 +1,6 @@
+
 export interface Item {
+  id?: string;          // Added unique ID for each item instance
   name: string;
   beschreibung: string;
   boni: Record<string, number>;
@@ -152,7 +154,7 @@ export type GameAction =
   | { type: 'END_COMBAT'; won: boolean }
   | { type: 'BUY_ITEM'; item: Item }
   | { type: 'SELL_ITEM'; itemIndex: number; npc: string }
-  | { type: 'EQUIP_ITEM'; item: Item }
+  | { type: 'EQUIP_ITEM'; item: Item; itemIndex: number }  // Updated to include itemIndex
   | { type: 'USE_INVENTORY_ITEM'; itemIndex: number }
   | { type: 'DROP_ITEM'; itemIndex: number }
   | { type: 'TAKE_QUEST'; quest: Quest; npc: string }

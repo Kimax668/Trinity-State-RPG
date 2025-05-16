@@ -25,7 +25,7 @@ const InventoryUI: React.FC = () => {
     if (item.typ === "verbrauchbar") {
       dispatch({ type: 'USE_INVENTORY_ITEM', itemIndex: index });
     } else if (["waffe", "ruestung", "helm", "accessoire"].includes(item.typ)) {
-      dispatch({ type: 'EQUIP_ITEM', item });
+      dispatch({ type: 'EQUIP_ITEM', item, itemIndex: index });
     }
     
     setSelectedItemIndex(null);
@@ -41,14 +41,16 @@ const InventoryUI: React.FC = () => {
     setSelectedItemIndex(null);
   };
 
-  const isItemEquipped = (item: Item): boolean => {
+  const isItemEquipped = (item: Item, index: number): boolean => {
     const { ausgeruestet } = character;
-    return (
-      ausgeruestet.waffe === item ||
-      ausgeruestet.ruestung === item ||
-      ausgeruestet.helm === item ||
-      ausgeruestet.accessoire === item
-    );
+    
+    // Compare by item reference from inventory rather than by name
+    if (ausgeruestet.waffe && ausgeruestet.waffe.id === item.id) return true;
+    if (ausgeruestet.ruestung && ausgeruestet.ruestung.id === item.id) return true;
+    if (ausgeruestet.helm && ausgeruestet.helm.id === item.id) return true;
+    if (ausgeruestet.accessoire && ausgeruestet.accessoire.id === item.id) return true;
+    
+    return false;
   };
 
   // Get NPCs that can buy items from current location
@@ -67,8 +69,8 @@ const InventoryUI: React.FC = () => {
     }
   };
 
-  const canSellItem = (item: Item): boolean => {
-    if (isItemEquipped(item)) return false;
+  const canSellItem = (item: Item, index: number): boolean => {
+    if (isItemEquipped(item, index)) return false;
     if (item.verkaufbar === false) return false;
     
     // Check if any NPC at current location buys this type of item
@@ -95,7 +97,7 @@ const InventoryUI: React.FC = () => {
             <div 
               key={index}
               className={`border rounded p-2 cursor-pointer hover:bg-white hover:bg-opacity-50 transition-all 
-                ${isItemEquipped(item) ? 'border-rpg-primary bg-rpg-secondary bg-opacity-10' : 'border-gray-300'}`}
+                ${isItemEquipped(item, index) ? 'border-rpg-primary bg-rpg-secondary bg-opacity-10' : 'border-gray-300'}`}
               onClick={() => setSelectedItemIndex(index)}
             >
               <div className="flex justify-between">
@@ -104,7 +106,7 @@ const InventoryUI: React.FC = () => {
                   <span className="text-xs bg-gray-200 text-gray-700 px-1 rounded">
                     {getItemTypeLabel(item.typ)}
                   </span>
-                  {isItemEquipped(item) && (
+                  {isItemEquipped(item, index) && (
                     <span className="text-xs bg-rpg-primary text-white px-1 rounded">Ausgerüstet</span>
                   )}
                   {item.statusEffekt && (
@@ -132,7 +134,7 @@ const InventoryUI: React.FC = () => {
             <Tabs defaultValue="details">
               <TabsList className="w-full">
                 <TabsTrigger value="details">Details</TabsTrigger>
-                {canSellItem(character.inventar[selectedItemIndex]) && (
+                {canSellItem(character.inventar[selectedItemIndex], selectedItemIndex) && (
                   <TabsTrigger value="sell">Verkaufen</TabsTrigger>
                 )}
               </TabsList>
@@ -168,9 +170,16 @@ const InventoryUI: React.FC = () => {
                   <span className="font-medium">Wert:</span>
                   <span>{character.inventar[selectedItemIndex]?.preis} Gold</span>
                 </div>
+                
+                {character.inventar[selectedItemIndex]?.minLevel && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">Min. Level:</span>
+                    <span>{character.inventar[selectedItemIndex]?.minLevel}</span>
+                  </div>
+                )}
               </TabsContent>
               
-              {canSellItem(character.inventar[selectedItemIndex]) && (
+              {canSellItem(character.inventar[selectedItemIndex], selectedItemIndex) && (
                 <TabsContent value="sell" className="py-4 space-y-4">
                   <div className="text-center mb-2">
                     <div className="font-medium">Verkaufspreis:</div>

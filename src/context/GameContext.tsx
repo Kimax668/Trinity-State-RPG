@@ -136,6 +136,11 @@ const initialState: GameState = {
   }
 };
 
+// Function to generate a unique ID
+const generateUniqueId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+};
+
 // Get total bonus from all equipped items
 const getTotalBonus = (equipment: Equipment, bonusName: string): number => {
   let totalBonus = 0;
@@ -1053,6 +1058,16 @@ const isItemEquipped = (item: Item, equipment: Equipment): boolean => {
   );
 };
 
+// Helper function to ensure all items have IDs
+const ensureItemIds = (items: Item[]): Item[] => {
+  return items.map(item => {
+    if (!item.id) {
+      return { ...item, id: generateUniqueId() };
+    }
+    return item;
+  });
+};
+
 // Helper function for monster attack logic
 const handleMonsterAttack = (state: GameState, monster: Monster): GameState => {
   const { character } = state;
@@ -1332,6 +1347,28 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (savedData) {
       try {
         const characterData = JSON.parse(savedData);
+        
+        // Ensure all items have IDs
+        if (characterData.inventar) {
+          characterData.inventar = ensureItemIds(characterData.inventar);
+        }
+        
+        // Ensure equipped items have IDs
+        if (characterData.ausgeruestet) {
+          if (characterData.ausgeruestet.waffe && !characterData.ausgeruestet.waffe.id) {
+            characterData.ausgeruestet.waffe.id = generateUniqueId();
+          }
+          if (characterData.ausgeruestet.ruestung && !characterData.ausgeruestet.ruestung.id) {
+            characterData.ausgeruestet.ruestung.id = generateUniqueId();
+          }
+          if (characterData.ausgeruestet.helm && !characterData.ausgeruestet.helm.id) {
+            characterData.ausgeruestet.helm.id = generateUniqueId();
+          }
+          if (characterData.ausgeruestet.accessoire && !characterData.ausgeruestet.accessoire.id) {
+            characterData.ausgeruestet.accessoire.id = generateUniqueId();
+          }
+        }
+        
         dispatch({ type: 'LOAD_CHARACTER', character: characterData as Character });
       } catch (error) {
         console.error("Failed to load character:", error);
