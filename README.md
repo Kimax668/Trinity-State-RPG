@@ -35,6 +35,7 @@ cd Trinity-State-RPG
 
 # Step 3: Execute run.bat for automatic installation of node.js and dependecies
 .\run.bat
+# Game starts after installation finishes
 ```
 
 ## What technologies are used for this project?
