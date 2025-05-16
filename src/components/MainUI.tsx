@@ -8,20 +8,30 @@ import QuestLogUI from './QuestLogUI';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Trophy } from "lucide-react";
 
 const MainUI: React.FC = () => {
   const { state, dispatch } = useGameContext();
   const { character } = state;
+
+  // Calculate level progress percentage
+  const levelProgressPercent = (character.xp / (character.level * 100)) * 100;
 
   return (
     <div className="flex flex-col gap-4 p-4">
       {/* Character Stats Bar */}
       <div className="flex flex-col md:flex-row justify-between items-center p-4 parchment">
         <div className="flex items-center gap-4 mb-4 md:mb-0">
-          <h1 className="text-2xl font-bold">
-            {character.name} 
-            <span className="text-sm font-normal ml-2">Lvl. {character.level}</span>
-          </h1>
+          <div className="flex flex-col">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold">{character.name}</h1>
+              <div className="ml-2 flex items-center bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
+                <Trophy size={16} className="mr-1" />
+                <span className="text-sm font-semibold">Lvl. {character.level}</span>
+              </div>
+            </div>
+            <div className="text-sm text-gray-600">{character.aktueller_ort}</div>
+          </div>
         </div>
           
         <div className="flex-grow mx-2 md:mx-8 w-full md:w-auto">
@@ -30,7 +40,7 @@ const MainUI: React.FC = () => {
               <span className="w-8 text-right text-sm">HP:</span>
               <div className="w-full bg-gray-200 rounded-full h-4">
                 <div 
-                  className="bg-red-600 h-4 rounded-full" 
+                  className="bg-red-600 h-4 rounded-full transition-all duration-500" 
                   style={{ width: `${(character.hp / character.max_hp) * 100}%` }}
                 >
                 </div>
@@ -41,8 +51,8 @@ const MainUI: React.FC = () => {
               <span className="w-8 text-right text-sm">XP:</span>
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div 
-                  className="bg-blue-500 h-3 rounded-full" 
-                  style={{ width: `${(character.xp / (character.level * 100)) * 100}%` }}
+                  className="bg-blue-500 h-3 rounded-full transition-all duration-300" 
+                  style={{ width: `${levelProgressPercent}%` }}
                 >
                 </div>
               </div>
@@ -57,7 +67,6 @@ const MainUI: React.FC = () => {
               <span className="font-semibold">{character.gold}</span>
               <span className="text-yellow-600 ml-1">Gold</span>
             </div>
-            <div className="text-sm text-gray-600">{character.aktueller_ort}</div>
           </div>
           <Button 
             onClick={() => dispatch({ type: 'SAVE_GAME' })}

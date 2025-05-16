@@ -1,4 +1,3 @@
-
 export interface Item {
   name: string;
   beschreibung: string;
@@ -130,6 +129,15 @@ export interface ZauberDefinition {
   statusEffekt?: string;   // Status effect applied (burning, freezing, etc.)
   statusDauer?: number;    // Duration of status effect in turns
   minLevel?: number;       // Minimum level requirement
+  verfuegbarkeit?: "stadt" | "npc_quest" | "npc_teach" | "npc_drop"; // Where spell can be obtained
+  lehrer?: string;         // NPC who teaches this spell
+  questgeber?: string;     // NPC who gives quest for this spell
+  monsterDrop?: string;    // Monster that drops this spell
+  schildWert?: number;     // Shield value for protective spells
+  schildFaktor?: number;   // Intelligence multiplier for shield
+  selbstSchaden?: number;  // Self-damage for powerful spells
+  statusCleanse?: boolean; // Whether spell cleans status effects
+  extraAktion?: boolean;   // Whether spell gives an extra action
 }
 
 export type GameAction =

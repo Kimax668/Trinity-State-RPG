@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Character, GameAction, GameState, Item, Monster, Quest, Equipment, Location } from '../types/game';
@@ -1201,8 +1200,10 @@ const handleCombatVictory = (state: GameState, monster: Monster): GameState => {
     }
   }
   
-  // Check for level up
-  if (character.xp >= character.level * 100) {
+  // Check for level up - modified to work at all levels
+  const requiredXP = character.level * 100;
+  if (character.xp >= requiredXP) {
+    character.xp -= requiredXP; // Subtract required XP and keep remainder
     state = handleLevelUp(state);
   }
   
@@ -1215,7 +1216,13 @@ const handleCombatVictory = (state: GameState, monster: Monster): GameState => {
 const handleLevelUp = (state: GameState): GameState => {
   const { character } = state;
   character.level += 1;
-  character.max_hp += 20;
+  
+  // Scale HP growth based on level
+  const hpGainBase = 20;
+  const hpScaleFactor = Math.min(1.0, 0.7 + (character.level * 0.02)); // Scaling factor increases with level
+  const hpGain = Math.floor(hpGainBase * hpScaleFactor);
+  
+  character.max_hp += hpGain;
   character.hp = character.max_hp;
   
   // Give stat points instead of increasing stats directly
@@ -1224,7 +1231,8 @@ const handleLevelUp = (state: GameState): GameState => {
   state.combatLog = [
     ...state.combatLog, 
     `Level Up! Du bist jetzt Level ${character.level}!`,
-    `Du erhältst 5 Statpunkte zum Verteilen!`
+    `Du erhältst 5 Statpunkte zum Verteilen!`,
+    `Deine maximalen Lebenspunkte steigen um ${hpGain}!`
   ];
   
   // Check if new locations can be discovered
