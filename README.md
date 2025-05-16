@@ -24,7 +24,7 @@ npm i
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
-another method would be to 
+another method would be to:
 
 ```sh
 # Step 1: Clone the repository using the project's Git URL.
