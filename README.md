@@ -29,8 +29,10 @@ another method would be to
 ```sh
 # Step 1: Clone the repository using the project's Git URL.
 git clone https://github.com/Kimax668/Trinity-State-RPG.git
+
 # Step 2: Navigate to the project directory.
 cd Trinity-State-RPG
+
 # Step 3: Execute run.bat for automatic installation of node.js and dependecies
 .\run.bat
 ```
