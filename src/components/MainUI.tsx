@@ -5,6 +5,7 @@ import CharacterUI from './CharacterUI';
 import LocationUI from './LocationUI';
 import InventoryUI from './InventoryUI';
 import QuestLogUI from './QuestLogUI';
+import TrainingUI from './TrainingUI';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -126,12 +127,21 @@ const MainUI: React.FC = () => {
                       Quests
                     </div>
                   </TabsTrigger>
+                  <TabsTrigger value="training" className="flex-1 data-[state=active]:bg-amber-200 data-[state=active]:text-amber-900">
+                    <div className="flex items-center">
+                      <Sword size={16} className="mr-2" /> 
+                      Training
+                    </div>
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="location" className="h-full">
                   <LocationUI />
                 </TabsContent>
                 <TabsContent value="quests">
                   <QuestLogUI />
+                </TabsContent>
+                <TabsContent value="training">
+                  <TrainingUI />
                 </TabsContent>
               </Tabs>
             </CardContent>

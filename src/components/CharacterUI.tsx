@@ -12,9 +12,10 @@ import { Button } from '@/components/ui/button';
 import { 
   Shield, 
   Swords, 
-  Brain, 
+  Brain,
   Axe,
-  Backpack
+  Backpack,
+  Sparkles
 } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 
@@ -26,7 +27,7 @@ const CharacterUI: React.FC = () => {
   const xpNeeded = character.level * 100;
   const xpProgress = Math.min((character.xp / xpNeeded) * 100, 100);
 
-  const handleAssignStatPoint = (attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung') => {
+  const handleAssignStatPoint = (attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung' | 'mana') => {
     dispatch({ type: 'ASSIGN_STAT_POINT', attribute });
   };
   
@@ -85,8 +86,39 @@ const CharacterUI: React.FC = () => {
           </div>
           <div className="stat-block">
             <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Sparkles size={16} className="mr-1" />
+                <span>Mana:</span>
+              </div>
+              <span>{character.mana}/{character.max_mana}</span>
+            </div>
+            <Progress value={(character.mana / character.max_mana) * 100} className="h-2 bg-blue-100" />
+          </div>
+          <div className="stat-block">
+            <div className="flex items-center justify-between">
               <span>Gold:</span>
               <span className="text-yellow-500">{character.gold}</span>
+            </div>
+          </div>
+          <div className="stat-block">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Sparkles size={16} className="mr-1 text-blue-500" />
+                <span>Max Mana:</span>
+              </div>
+              <span className="flex items-center">
+                {character.max_mana} <span className="text-green-500">{getEquipmentBonusText('mana')}</span>
+                {character.unverteilte_punkte > 0 && (
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="ml-1 h-5 w-5 rounded-full" 
+                    onClick={() => handleAssignStatPoint('mana')}
+                  >
+                    +
+                  </Button>
+                )}
+              </span>
             </div>
           </div>
           <div className="stat-block">

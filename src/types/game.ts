@@ -68,6 +68,8 @@ export interface Character {
   name: string;
   hp: number;
   max_hp: number;
+  mana: number;            // Neue Mana-Eigenschaft
+  max_mana: number;        // Neue max_mana-Eigenschaft
   staerke: number;
   intelligenz: number;
   ausweichen: number;
@@ -162,8 +164,8 @@ export type GameAction =
   | { type: 'DROP_ITEM'; itemIndex: number }
   | { type: 'TAKE_QUEST'; quest: Quest; npc: string }
   | { type: 'COMPLETE_QUEST'; questIndex: number; npc: string }
-  | { type: 'TRAIN_ATTRIBUTE'; attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung' }
-  | { type: 'ASSIGN_STAT_POINT'; attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung' }
+  | { type: 'TRAIN_ATTRIBUTE'; attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung' | 'mana' }
+  | { type: 'ASSIGN_STAT_POINT'; attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung' | 'mana' }
   | { type: 'LEARN_SPELL'; spell: string }
   | { type: 'CHANGE_SCREEN'; screen: string }
   | { type: 'UPDATE_COMBAT_LOG'; message: string }

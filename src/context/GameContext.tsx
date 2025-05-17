@@ -99,6 +99,8 @@ const createInitialCharacter = (name: string): Character => ({
   name,
   hp: 100,
   max_hp: 100,
+  mana: 50,         // Initiale Mana-Werte
+  max_mana: 50,     // Initiale max_mana-Werte
   staerke: 10,
   intelligenz: 10,
   ausweichen: 5,
@@ -348,7 +350,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         staerke: 0,
         intelligenz: 0,
         ausweichen: 0,
-        verteidigung: 0
+        verteidigung: 0,
+        mana: 0          // Mana-Training-Zähler initialisieren
       };
       
       newState = {
@@ -366,14 +369,27 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         character.entdeckte_orte = ["Hauptstadt", "Wald", "Berge", "See", "Höhle", "Wüste"];
       }
       
+      // Initialisiere Mana-Werte, falls sie fehlen
+      if (typeof character.mana !== 'number') {
+        character.mana = 50;
+      }
+      
+      if (typeof character.max_mana !== 'number') {
+        character.max_mana = 50;
+      }
+      
       // Initialize attributeTrainingCount if missing
       if (!character.attributeTrainingCount) {
         character.attributeTrainingCount = {
           staerke: 0,
           intelligenz: 0,
           ausweichen: 0,
-          verteidigung: 0
+          verteidigung: 0,
+          mana: 0          // Mana-Training-Zähler initialisieren
         };
+      } else if (!character.attributeTrainingCount.mana) {
+        // Falls attributeTrainingCount existiert, aber mana fehlt
+        character.attributeTrainingCount.mana = 0;
       }
       
       // Copy discovered locations to orteDetails
@@ -609,6 +625,19 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         return newState;
       }
       
+      // Prüfen, ob genug Mana vorhanden ist
+      const manaBedarf = spellDef.manaBedarf || 0;
+      if (character.mana < manaBedarf) {
+        newState.combatLog = [
+          ...newState.combatLog, 
+          `Nicht genug Mana für ${spellName}! (Benötigt: ${manaBedarf})`
+        ];
+        return newState;
+      }
+      
+      // Mana abziehen
+      character.mana = Math.max(0, character.mana - manaBedarf);
+      
       // Check for status effects on character first
       const [updatedCharacter, characterStatusLog] = processStatusEffects(character, []);
       newState.character = updatedCharacter as Character;
@@ -769,13 +798,22 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     }
 
     case 'END_COMBAT':
+      // Stelle etwas Mana nach dem Kampf wieder her
+      if (newState.character.mana < newState.character.max_mana) {
+        const manaRegeneration = Math.floor(newState.character.max_mana * 0.1); // 10% Mana-Regeneration
+        newState.character.mana = Math.min(
+          newState.character.max_mana,
+          newState.character.mana + manaRegeneration
+        );
+      }
+      
       newState = {
         ...state,
         currentMonster: null,
         gameScreen: 'main'
       };
       return performAutoSave(newState);
-
+      
     case 'BUY_ITEM': {
       newState = { ...state };
       const { character } = newState;
@@ -970,7 +1008,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
           staerke: 0,
           intelligenz: 0,
           ausweichen: 0,
-          verteidigung: 0
+          verteidigung: 0,
+          mana: 0
         };
       }
       
@@ -985,10 +1024,20 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       if (character.gold >= cost) {
         character.gold -= cost;
-        character[action.attribute] += 1;
+        
+        if (action.attribute === 'mana') {
+          // Mana-Training erhöht max_mana
+          character.max_mana += 5; 
+          character.mana = character.max_mana; // Füllt auch die Mana wieder auf
+          toast.success(`Maximales Mana um 5 erhöht! (Kosten: ${cost} Gold)`);
+        } else {
+          // Normale Attribute erhöhen
+          character[action.attribute] += 1;
+          toast.success(`${action.attribute} erhöht! (Kosten: ${cost} Gold)`);
+        }
+        
         // Increment training count for this attribute
         character.attributeTrainingCount[action.attribute] = trainingCount + 1;
-        toast.success(`${action.attribute} erhöht! (Kosten: ${cost} Gold)`);
       } else {
         toast.error(`Nicht genug Gold! (Benötigt: ${cost} Gold)`);
       }
@@ -1001,16 +1050,23 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       const { character } = newState;
       
       if (character.unverteilte_punkte > 0) {
-        character[action.attribute] += 1;
+        if (action.attribute === 'mana') {
+          // Mana-Attributpunkte erhöhen max_mana
+          character.max_mana += 10;
+          character.mana = character.max_mana; // Füllt auch Mana wieder auf
+          toast.success(`Maximales Mana um 10 erhöht!`);
+        } else {
+          character[action.attribute] += 1;
+          toast.success(`${action.attribute} erhöht!`);
+        }
         character.unverteilte_punkte -= 1;
-        toast.success(`${action.attribute} erhöht!`);
       } else {
         toast.error("Keine freien Statpunkte verfügbar!");
       }
       
       return performAutoSave(newState);
     }
-
+    
     case 'LEARN_SPELL': {
       newState = { ...state };
       const { character } = newState;
@@ -1307,8 +1363,16 @@ const handleLevelUp = (state: GameState): GameState => {
   const hpScaleFactor = Math.min(1.0, 0.7 + (character.level * 0.02)); // Scaling factor increases with level
   const hpGain = Math.floor(hpGainBase * hpScaleFactor);
   
+  // Mana-Erhöhung beim Levelaufstieg
+  const manaGainBase = 10;
+  const manaScaleFactor = Math.min(1.0, 0.7 + (character.level * 0.02));
+  const manaGain = Math.floor(manaGainBase * manaScaleFactor);
+  
   character.max_hp += hpGain;
   character.hp = character.max_hp;
+  
+  character.max_mana += manaGain;
+  character.mana = character.max_mana;
   
   // Give stat points instead of increasing stats directly
   character.unverteilte_punkte += 5;
@@ -1317,7 +1381,8 @@ const handleLevelUp = (state: GameState): GameState => {
     ...state.combatLog, 
     `Level Up! Du bist jetzt Level ${character.level}!`,
     `Du erhältst 5 Statpunkte zum Verteilen!`,
-    `Deine maximalen Lebenspunkte steigen um ${hpGain}!`
+    `Deine maximalen Lebenspunkte steigen um ${hpGain}!`,
+    `Dein maximales Mana steigt um ${manaGain}!`
   ];
   
   // Check if new locations can be discovered
