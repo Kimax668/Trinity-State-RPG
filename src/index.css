@@ -92,6 +92,14 @@
   body {
     @apply bg-rpg-background text-rpg-text;
     font-family: 'Lora', serif;
+    background-image: url('/fantasy-bg.jpg');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medieval;
   }
 }
 
@@ -133,5 +141,46 @@
   .progress-bar-fill {
     @apply h-full bg-gradient-to-r from-blue-400 to-blue-600;
     transition: width 0.3s ease;
+  }
+  
+  .item-card {
+    @apply border rounded-md p-3 transition-all duration-200 cursor-pointer;
+  }
+  
+  .item-common {
+    @apply border-gray-300 hover:bg-gray-50;
+  }
+  
+  .item-uncommon {
+    @apply border-green-300 hover:bg-green-50;
+  }
+  
+  .item-rare {
+    @apply border-blue-300 hover:bg-blue-50;
+  }
+  
+  .item-epic {
+    @apply border-purple-300 hover:bg-purple-50;
+  }
+  
+  .item-legendary {
+    @apply border-orange-300 hover:bg-orange-50 animate-glow;
+  }
+  
+  .fantasy-border {
+    @apply border-2 border-rpg-secondary rounded-md p-4 relative;
+  }
+  
+  .fantasy-border::before {
+    content: '';
+    @apply absolute top-1 left-1 right-1 bottom-1 border border-rpg-primary rounded pointer-events-none;
+  }
+  
+  .fantasy-title {
+    @apply font-medieval text-rpg-accent text-shadow;
+  }
+  
+  .text-shadow {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
   }
 }
