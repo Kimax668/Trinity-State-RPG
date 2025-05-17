@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useGameContext } from '../context/GameContext';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { City, Building, Castle, MapPin } from 'lucide-react'; // Import Lucide icons
+import { Building, Castle, MapPin } from 'lucide-react'; // Fixed: removed City import
 
 const LocationUI: React.FC = () => {
   const { state, dispatch } = useGameContext();

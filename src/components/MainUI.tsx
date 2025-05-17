@@ -17,6 +17,11 @@ const MainUI: React.FC = () => {
   // Calculate level progress percentage
   const levelProgressPercent = (character.xp / (character.level * 100)) * 100;
 
+  // Type guard for checking if character has mana properties
+  const hasMana = (char: any): char is { mana: number; max_mana: number } => {
+    return typeof char.mana === 'number' && typeof char.max_mana === 'number';
+  };
+
   return (
     <div className="flex flex-col gap-4 p-2 md:p-4 page-container">
       {/* Character Stats Bar */}
@@ -52,8 +57,9 @@ const MainUI: React.FC = () => {
               </div>
               <span className="w-20 text-sm font-semibold">{character.hp}/{character.max_hp}</span>
             </div>
+            
             {/* Only show mana bar if the character has mana properties */}
-            {typeof character.mana === 'number' && typeof character.max_mana === 'number' && (
+            {hasMana(character) && (
               <div className="flex items-center gap-2">
                 <span className="w-8 text-right text-sm flex items-center justify-end">
                   <Sparkles size={14} className="mr-1" />
@@ -68,6 +74,7 @@ const MainUI: React.FC = () => {
                 <span className="w-20 text-sm font-semibold">{character.mana}/{character.max_mana}</span>
               </div>
             )}
+            
             <div className="flex items-center gap-2">
               <span className="w-8 text-right text-sm flex items-center justify-end">
                 <Scroll size={14} className="mr-1" />

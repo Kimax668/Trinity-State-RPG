@@ -52,8 +52,10 @@ const CombatScreen: React.FC = () => {
     );
   };
 
-  // Check if character has mana properties
-  const hasMana = 'mana' in character && 'max_mana' in character;
+  // Type guard for checking if character has mana properties
+  const hasMana = (char: any): char is { mana: number; max_mana: number } => {
+    return typeof char.mana === 'number' && typeof char.max_mana === 'number';
+  };
 
   return (
     <div className="min-h-screen bg-black bg-opacity-70 flex items-center justify-center p-4">
@@ -132,7 +134,7 @@ const CombatScreen: React.FC = () => {
                     </div>
                     
                     {/* Only show mana bar if character has mana properties */}
-                    {hasMana && (
+                    {hasMana(character) && (
                       <div className="mt-2">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">Mana:</span>
@@ -202,7 +204,8 @@ const CombatScreen: React.FC = () => {
                       <div className="grid grid-cols-2 gap-2">
                         {character.zauber.map((spell, index) => {
                           const spellDef = zauberDefinitionen[spell];
-                          const hasEnoughMana = hasMana && character.mana >= (spellDef?.manaBedarf || 0);
+                          const manaBedarf = spellDef?.manaBedarf || 0;
+                          const hasEnoughMana = hasMana(character) && character.mana >= manaBedarf;
                           
                           // Style based on spell type
                           let spellStyle = "bg-blue-600 hover:bg-blue-700";
@@ -225,13 +228,13 @@ const CombatScreen: React.FC = () => {
                             <Button 
                               key={index} 
                               className={`text-sm py-1 flex items-center justify-center ${hasEnoughMana ? spellStyle : 'bg-gray-500'}`}
-                              title={`${spellDef?.beschreibung || ""} (${spellDef?.manaBedarf || 0} Mana)`}
+                              title={`${spellDef?.beschreibung || ""} (${manaBedarf} Mana)`}
                               onClick={() => dispatch({ type: 'CAST_SPELL', spell })}
-                              disabled={hasMana && !hasEnoughMana}
+                              disabled={!hasEnoughMana}
                             >
                               <SpellIcon className="h-4 w-4 mr-1" />
                               <span className="truncate">{spell}</span>
-                              <span className="ml-1 text-xs">({spellDef?.manaBedarf || 0})</span>
+                              <span className="ml-1 text-xs">({manaBedarf})</span>
                             </Button>
                           );
                         })}
