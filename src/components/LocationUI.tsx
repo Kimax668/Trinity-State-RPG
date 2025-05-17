@@ -11,6 +11,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { City, Building, Castle, MapPin } from 'lucide-react'; // Import Lucide icons
 
 const LocationUI: React.FC = () => {
   const { state, dispatch } = useGameContext();
@@ -32,6 +33,31 @@ const LocationUI: React.FC = () => {
     
     const cost = Math.floor(basePrice * (1 + ((character.level - 1) * multiplier)));
     return cost;
+  };
+
+  // Function to get location icon based on location type
+  const getLocationIcon = (locationName: string) => {
+    if (locationName === "Hauptstadt") {
+      return <Castle className="mr-2 text-purple-600" size={18} />;
+    } else if (orteDetails[locationName]?.istDorf) {
+      return <Building className="mr-2 text-amber-600" size={18} />;
+    } else {
+      return <MapPin className="mr-2 text-green-600" size={18} />;
+    }
+  };
+
+  // Function to get location button class based on location type
+  const getLocationButtonClass = (locationName: string) => {
+    if (locationName === "Hauptstadt") {
+      // Special styling for capital city
+      return "rpg-button bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 border-2 border-yellow-400 shadow-md";
+    } else if (orteDetails[locationName]?.istDorf) {
+      // Styling for villages
+      return "rpg-button bg-gradient-to-r from-amber-500 to-amber-700";
+    } else {
+      // Default styling for other locations
+      return "rpg-button bg-gradient-to-r from-green-600 to-green-800";
+    }
   };
 
   const handleTravel = (location: string) => {
@@ -194,16 +220,32 @@ const LocationUI: React.FC = () => {
             <div>
               <ScrollArea className="h-[60vh]">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pr-4">
-                  {availableLocations.map(ort => (
-                    <Button
-                      key={ort}
-                      className={`rpg-button ${ort === character.aktueller_ort ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      disabled={ort === character.aktueller_ort}
-                      onClick={() => handleTravel(ort)}
-                    >
-                      {ort}
-                    </Button>
-                  ))}
+                  {state.orte.map(ort => {
+                    const isCapital = ort === "Hauptstadt";
+                    const isSettlement = orteDetails[ort]?.istDorf === true || isCapital;
+                    const isCurrentLocation = ort === character.aktueller_ort;
+                    const isDiscovered = orteDetails[ort]?.entdeckt;
+                    
+                    if (!isDiscovered) return null;
+                    
+                    return (
+                      <Button
+                        key={ort}
+                        className={`
+                          ${getLocationButtonClass(ort)} 
+                          ${isCurrentLocation ? 'opacity-50 cursor-not-allowed' : ''}
+                          transition-all duration-300
+                        `}
+                        disabled={isCurrentLocation}
+                        onClick={() => handleTravel(ort)}
+                      >
+                        <div className="flex items-center justify-center">
+                          {getLocationIcon(ort)}
+                          <span>{ort}</span>
+                        </div>
+                      </Button>
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </div>

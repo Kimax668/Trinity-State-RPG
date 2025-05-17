@@ -53,7 +53,7 @@ const MainUI: React.FC = () => {
               <span className="w-20 text-sm font-semibold">{character.hp}/{character.max_hp}</span>
             </div>
             {/* Only show mana bar if the character has mana properties */}
-            {'mana' in character && 'max_mana' in character && (
+            {typeof character.mana === 'number' && typeof character.max_mana === 'number' && (
               <div className="flex items-center gap-2">
                 <span className="w-8 text-right text-sm flex items-center justify-end">
                   <Sparkles size={14} className="mr-1" />
