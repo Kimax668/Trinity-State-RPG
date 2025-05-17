@@ -52,19 +52,22 @@ const MainUI: React.FC = () => {
               </div>
               <span className="w-20 text-sm font-semibold">{character.hp}/{character.max_hp}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-8 text-right text-sm flex items-center justify-end">
-                <Sparkles size={14} className="mr-1" />
-              </span>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full transition-all duration-300" 
-                  style={{ width: `${(character.mana / character.max_mana) * 100}%` }}
-                >
+            {/* Only show mana bar if the character has mana properties */}
+            {'mana' in character && 'max_mana' in character && (
+              <div className="flex items-center gap-2">
+                <span className="w-8 text-right text-sm flex items-center justify-end">
+                  <Sparkles size={14} className="mr-1" />
+                </span>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full transition-all duration-300" 
+                    style={{ width: `${(character.mana / character.max_mana) * 100}%` }}
+                  >
+                  </div>
                 </div>
+                <span className="w-20 text-sm font-semibold">{character.mana}/{character.max_mana}</span>
               </div>
-              <span className="w-20 text-sm font-semibold">{character.mana}/{character.max_mana}</span>
-            </div>
+            )}
             <div className="flex items-center gap-2">
               <span className="w-8 text-right text-sm flex items-center justify-end">
                 <Scroll size={14} className="mr-1" />

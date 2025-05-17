@@ -9,7 +9,7 @@ import { Sword, Sparkles, Shield, FlameKindling, Snowflake, Zap } from 'lucide-r
 
 const CombatScreen: React.FC = () => {
   const { state, dispatch } = useGameContext();
-  const { character, currentMonster, combatLog } = state;
+  const { character, currentMonster, combatLog, zauberDefinitionen } = state;
 
   if (!currentMonster) {
     return null;
@@ -51,6 +51,9 @@ const CombatScreen: React.FC = () => {
       </div>
     );
   };
+
+  // Check if character has mana properties
+  const hasMana = 'mana' in character && 'max_mana' in character;
 
   return (
     <div className="min-h-screen bg-black bg-opacity-70 flex items-center justify-center p-4">
@@ -128,18 +131,21 @@ const CombatScreen: React.FC = () => {
                       />
                     </div>
                     
-                    <div className="mt-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Mana:</span>
-                        <div className="flex-grow bg-gray-200 rounded-full h-3">
-                          <div 
-                            className="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full transition-all duration-300" 
-                            style={{ width: `${(character.mana / character.max_mana) * 100}%` }}
-                          />
+                    {/* Only show mana bar if character has mana properties */}
+                    {hasMana && (
+                      <div className="mt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">Mana:</span>
+                          <div className="flex-grow bg-gray-200 rounded-full h-3">
+                            <div 
+                              className="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full transition-all duration-300" 
+                              style={{ width: `${(character.mana / character.max_mana) * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">{character.mana}/{character.max_mana}</span>
                         </div>
-                        <span className="text-sm font-medium">{character.mana}/{character.max_mana}</span>
                       </div>
-                    </div>
+                    )}
                     
                     {renderStatusEffects(character.statusEffekte)}
                     
@@ -195,8 +201,8 @@ const CombatScreen: React.FC = () => {
                       <h4 className="text-sm font-medium fantasy-title">Zauber:</h4>
                       <div className="grid grid-cols-2 gap-2">
                         {character.zauber.map((spell, index) => {
-                          const spellDef = state.zauberDefinitionen[spell];
-                          const hasEnoughMana = character.mana >= (spellDef?.manaBedarf || 0);
+                          const spellDef = zauberDefinitionen[spell];
+                          const hasEnoughMana = hasMana && character.mana >= (spellDef?.manaBedarf || 0);
                           
                           // Style based on spell type
                           let spellStyle = "bg-blue-600 hover:bg-blue-700";
@@ -221,7 +227,7 @@ const CombatScreen: React.FC = () => {
                               className={`text-sm py-1 flex items-center justify-center ${hasEnoughMana ? spellStyle : 'bg-gray-500'}`}
                               title={`${spellDef?.beschreibung || ""} (${spellDef?.manaBedarf || 0} Mana)`}
                               onClick={() => dispatch({ type: 'CAST_SPELL', spell })}
-                              disabled={!hasEnoughMana}
+                              disabled={hasMana && !hasEnoughMana}
                             >
                               <SpellIcon className="h-4 w-4 mr-1" />
                               <span className="truncate">{spell}</span>
