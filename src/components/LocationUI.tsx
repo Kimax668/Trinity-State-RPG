@@ -10,13 +10,13 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Building, Castle, MapPin } from 'lucide-react'; // Fixed: removed City import
+import { Building, Castle, MapPin } from 'lucide-react';
 
 const LocationUI: React.FC = () => {
   const { state, dispatch } = useGameContext();
   const { character, orteDetails } = state;
   const [dialogContent, setDialogContent] = useState<{
-    type: 'travel' | 'shop' | 'training' | 'npc';
+    type: 'travel' | 'shop' | 'npc';
     title: string;
     open: boolean;
   }>({
@@ -80,14 +80,6 @@ const LocationUI: React.FC = () => {
     });
   };
 
-  const handleTrainingClick = () => {
-    setDialogContent({
-      type: 'training',
-      title: 'Training',
-      open: true
-    });
-  };
-
   const handleNpcClick = () => {
     setDialogContent({
       type: 'npc',
@@ -102,10 +94,6 @@ const LocationUI: React.FC = () => {
   
   const handleSellItem = (itemIndex: number, npc: string) => {
     dispatch({ type: 'SELL_ITEM', itemIndex, npc });
-  };
-
-  const handleTrainAttribute = (attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung') => {
-    dispatch({ type: 'TRAIN_ATTRIBUTE', attribute });
   };
 
   const handleLearnSpell = (spell: string) => {
@@ -164,9 +152,6 @@ const LocationUI: React.FC = () => {
             <>
               <Button className="rpg-button" onClick={handleShopClick}>
                 Shop
-              </Button>
-              <Button className="rpg-button" onClick={handleTrainingClick}>
-                Training
               </Button>
               <Button className="rpg-button" onClick={handleNpcClick}>
                 NPCs
@@ -374,134 +359,6 @@ const LocationUI: React.FC = () => {
                     </div>
                   </ScrollArea>
                 </div>
-              </TabsContent>
-            </Tabs>
-          )}
-          
-          {dialogContent.type === 'training' && (
-            <Tabs defaultValue="attributes">
-              <TabsList className="w-full">
-                <TabsTrigger value="attributes" className="flex-1">Attribute</TabsTrigger>
-                <TabsTrigger value="spells" className="flex-1">Zauber</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="attributes">
-                <div className="space-y-4 py-4">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold">Dein Gold:</span>
-                    <span className="text-yellow-600 font-semibold">{character.gold}</span>
-                  </div>
-                  
-                  <ScrollArea className="h-[50vh]">
-                    <div className="grid gap-3 pr-4">
-                      <Card>
-                        <CardContent className="p-4 flex justify-between items-center">
-                          <div>
-                            <h3 className="font-semibold">Stärke</h3>
-                            <p className="text-sm">Aktuell: {character.staerke}</p>
-                          </div>
-                          <Button 
-                            className="rpg-button" 
-                            onClick={() => handleTrainAttribute('staerke')}
-                            disabled={character.gold < getTrainingCost('staerke')}
-                          >
-                            Trainieren ({getTrainingCost('staerke')} Gold)
-                          </Button>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card>
-                        <CardContent className="p-4 flex justify-between items-center">
-                          <div>
-                            <h3 className="font-semibold">Intelligenz</h3>
-                            <p className="text-sm">Aktuell: {character.intelligenz}</p>
-                          </div>
-                          <Button 
-                            className="rpg-button" 
-                            onClick={() => handleTrainAttribute('intelligenz')}
-                            disabled={character.gold < getTrainingCost('intelligenz')}
-                          >
-                            Trainieren ({getTrainingCost('intelligenz')} Gold)
-                          </Button>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card>
-                        <CardContent className="p-4 flex justify-between items-center">
-                          <div>
-                            <h3 className="font-semibold">Ausweichen</h3>
-                            <p className="text-sm">Aktuell: {character.ausweichen}%</p>
-                          </div>
-                          <Button 
-                            className="rpg-button" 
-                            onClick={() => handleTrainAttribute('ausweichen')}
-                            disabled={character.gold < getTrainingCost('ausweichen')}
-                          >
-                            Trainieren ({getTrainingCost('ausweichen')} Gold)
-                          </Button>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card>
-                        <CardContent className="p-4 flex justify-between items-center">
-                          <div>
-                            <h3 className="font-semibold">Verteidigung</h3>
-                            <p className="text-sm">Aktuell: {character.verteidigung}</p>
-                          </div>
-                          <Button 
-                            className="rpg-button" 
-                            onClick={() => handleTrainAttribute('verteidigung')}
-                            disabled={character.gold < getTrainingCost('verteidigung')}
-                          >
-                            Trainieren ({getTrainingCost('verteidigung')} Gold)
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </ScrollArea>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="spells">
-                <ScrollArea className="h-[50vh]">
-                  <div className="space-y-4 py-4 pr-4">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">Dein Gold:</span>
-                      <span className="text-yellow-600 font-semibold">{character.gold}</span>
-                    </div>
-                    
-                    <div className="grid gap-3">
-                      {getAvailableSpells().length > 0 ? (
-                        getAvailableSpells().map((spell, index) => {
-                          const spellDef = state.zauberDefinitionen[spell];
-                          
-                          return (
-                            <Card key={index}>
-                              <CardContent className="p-4 flex justify-between items-center">
-                                <div>
-                                  <h3 className="font-semibold">{spell}</h3>
-                                  <p className="text-sm text-gray-600">{spellDef.beschreibung}</p>
-                                  {spellDef.minLevel && (
-                                    <p className="text-xs text-blue-600">Benötigt Level {spellDef.minLevel}</p>
-                                  )}
-                                </div>
-                                <Button 
-                                  className="rpg-button" 
-                                  onClick={() => handleLearnSpell(spell)}
-                                  disabled={character.gold < 50 || (spellDef.minLevel && character.level < spellDef.minLevel)}
-                                >
-                                  Lernen (50 Gold)
-                                </Button>
-                              </CardContent>
-                            </Card>
-                          );
-                        })
-                      ) : (
-                        <p className="text-center italic">Du kennst bereits alle verfügbaren Zauber</p>
-                      )}
-                    </div>
-                  </div>
-                </ScrollArea>
               </TabsContent>
             </Tabs>
           )}

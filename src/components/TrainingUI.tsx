@@ -3,7 +3,9 @@ import React from 'react';
 import { useGameContext } from '../context/GameContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Swords, Brain, Shield, Sparkles } from 'lucide-react';
+import { Swords, Brain, Shield, Sparkles, Footprints } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const TrainingUI: React.FC = () => {
   const { state, dispatch } = useGameContext();
@@ -39,6 +41,21 @@ const TrainingUI: React.FC = () => {
       dispatch({ type: 'TRAIN_ATTRIBUTE', attribute });
     }
   };
+  
+  // Get available spells based on character level
+  const getAvailableSpells = () => {
+    const allSpells = Object.entries(state.zauberDefinitionen)
+      .filter(([spellName, _]) => !character.zauber.includes(spellName))
+      .filter(([_, spell]) => !spell.minLevel || character.level >= spell.minLevel)
+      .map(([name, _]) => name);
+    
+    return allSpells;
+  };
+  
+  // Handle learning a spell
+  const handleLearnSpell = (spell: string) => {
+    dispatch({ type: 'LEARN_SPELL', spell });
+  };
 
   return (
     <Card className="training-card mb-4">
@@ -46,87 +63,141 @@ const TrainingUI: React.FC = () => {
         <CardTitle className="text-lg">Training</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="flex justify-between items-center p-2 border rounded">
-            <div className="flex items-center">
-              <Swords size={18} className="mr-2" />
-              <span>Stärke trainieren</span>
-            </div>
-            <Button 
-              onClick={() => handleTraining('staerke')}
-              variant="outline" 
-              className="flex items-center"
-              disabled={character.gold < calculateCost('staerke')}
-            >
-              <span className="mr-1">{calculateCost('staerke')}</span>
-              <span className="text-yellow-500">Gold</span>
-            </Button>
-          </div>
+        <Tabs defaultValue="attributes">
+          <TabsList className="w-full mb-4">
+            <TabsTrigger value="attributes" className="flex-1">Attribute</TabsTrigger>
+            <TabsTrigger value="spells" className="flex-1">Zauber</TabsTrigger>
+          </TabsList>
           
-          <div className="flex justify-between items-center p-2 border rounded">
-            <div className="flex items-center">
-              <Brain size={18} className="mr-2" />
-              <span>Intelligenz trainieren</span>
+          <TabsContent value="attributes">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="flex justify-between items-center p-2 border rounded">
+                <div className="flex items-center">
+                  <Swords size={18} className="mr-2" />
+                  <span>Stärke trainieren</span>
+                </div>
+                <Button 
+                  onClick={() => handleTraining('staerke')}
+                  variant="outline" 
+                  className="flex items-center"
+                  disabled={character.gold < calculateCost('staerke')}
+                >
+                  <span className="mr-1">{calculateCost('staerke')}</span>
+                  <span className="text-yellow-500">Gold</span>
+                </Button>
+              </div>
+              
+              <div className="flex justify-between items-center p-2 border rounded">
+                <div className="flex items-center">
+                  <Brain size={18} className="mr-2" />
+                  <span>Intelligenz trainieren</span>
+                </div>
+                <Button 
+                  onClick={() => handleTraining('intelligenz')}
+                  variant="outline" 
+                  className="flex items-center"
+                  disabled={character.gold < calculateCost('intelligenz')}
+                >
+                  <span className="mr-1">{calculateCost('intelligenz')}</span>
+                  <span className="text-yellow-500">Gold</span>
+                </Button>
+              </div>
+              
+              <div className="flex justify-between items-center p-2 border rounded">
+                <div className="flex items-center">
+                  <Footprints size={18} className="mr-2" />
+                  <span>Ausweichen trainieren</span>
+                </div>
+                <Button 
+                  onClick={() => handleTraining('ausweichen')}
+                  variant="outline" 
+                  className="flex items-center"
+                  disabled={character.gold < calculateCost('ausweichen')}
+                >
+                  <span className="mr-1">{calculateCost('ausweichen')}</span>
+                  <span className="text-yellow-500">Gold</span>
+                </Button>
+              </div>
+              
+              <div className="flex justify-between items-center p-2 border rounded">
+                <div className="flex items-center">
+                  <Shield size={18} className="mr-2" />
+                  <span>Verteidigung trainieren</span>
+                </div>
+                <Button 
+                  onClick={() => handleTraining('verteidigung')}
+                  variant="outline" 
+                  className="flex items-center"
+                  disabled={character.gold < calculateCost('verteidigung')}
+                >
+                  <span className="mr-1">{calculateCost('verteidigung')}</span>
+                  <span className="text-yellow-500">Gold</span>
+                </Button>
+              </div>
+              
+              <div className="flex justify-between items-center p-2 border rounded col-span-1 md:col-span-2 bg-blue-50">
+                <div className="flex items-center">
+                  <Sparkles size={18} className="mr-2 text-blue-500" />
+                  <span>Mana trainieren (+5)</span>
+                </div>
+                <Button 
+                  onClick={() => handleTraining('mana')}
+                  variant="outline" 
+                  className="flex items-center"
+                  disabled={character.gold < calculateCost('mana')}
+                >
+                  <span className="mr-1">{calculateCost('mana')}</span>
+                  <span className="text-yellow-500">Gold</span>
+                </Button>
+              </div>
             </div>
-            <Button 
-              onClick={() => handleTraining('intelligenz')}
-              variant="outline" 
-              className="flex items-center"
-              disabled={character.gold < calculateCost('intelligenz')}
-            >
-              <span className="mr-1">{calculateCost('intelligenz')}</span>
-              <span className="text-yellow-500">Gold</span>
-            </Button>
-          </div>
+          </TabsContent>
           
-          <div className="flex justify-between items-center p-2 border rounded">
-            <div className="flex items-center">
-              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-              <span>Ausweichen trainieren</span>
-            </div>
-            <Button 
-              onClick={() => handleTraining('ausweichen')}
-              variant="outline" 
-              className="flex items-center"
-              disabled={character.gold < calculateCost('ausweichen')}
-            >
-              <span className="mr-1">{calculateCost('ausweichen')}</span>
-              <span className="text-yellow-500">Gold</span>
-            </Button>
-          </div>
-          
-          <div className="flex justify-between items-center p-2 border rounded">
-            <div className="flex items-center">
-              <Shield size={18} className="mr-2" />
-              <span>Verteidigung trainieren</span>
-            </div>
-            <Button 
-              onClick={() => handleTraining('verteidigung')}
-              variant="outline" 
-              className="flex items-center"
-              disabled={character.gold < calculateCost('verteidigung')}
-            >
-              <span className="mr-1">{calculateCost('verteidigung')}</span>
-              <span className="text-yellow-500">Gold</span>
-            </Button>
-          </div>
-          
-          <div className="flex justify-between items-center p-2 border rounded col-span-1 md:col-span-2 bg-blue-50">
-            <div className="flex items-center">
-              <Sparkles size={18} className="mr-2 text-blue-500" />
-              <span>Mana trainieren (+5)</span>
-            </div>
-            <Button 
-              onClick={() => handleTraining('mana')}
-              variant="outline" 
-              className="flex items-center"
-              disabled={character.gold < calculateCost('mana')}
-            >
-              <span className="mr-1">{calculateCost('mana')}</span>
-              <span className="text-yellow-500">Gold</span>
-            </Button>
-          </div>
-        </div>
+          <TabsContent value="spells">
+            <ScrollArea className="h-[50vh]">
+              <div className="space-y-4 py-2 pr-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Dein Gold:</span>
+                  <span className="text-yellow-600 font-semibold">{character.gold}</span>
+                </div>
+                
+                <div className="grid gap-3">
+                  {getAvailableSpells().length > 0 ? (
+                    getAvailableSpells().map((spell, index) => {
+                      const spellDef = state.zauberDefinitionen[spell];
+                      
+                      return (
+                        <Card key={index}>
+                          <CardContent className="p-4 flex justify-between items-center">
+                            <div>
+                              <h3 className="font-semibold">{spell}</h3>
+                              <p className="text-sm text-gray-600">{spellDef.beschreibung}</p>
+                              {spellDef.minLevel && (
+                                <p className="text-xs text-blue-600">Benötigt Level {spellDef.minLevel}</p>
+                              )}
+                              {spellDef.manaKosten && (
+                                <p className="text-xs text-blue-400">Mana: {spellDef.manaKosten}</p>
+                              )}
+                            </div>
+                            <Button 
+                              className="rpg-button" 
+                              onClick={() => handleLearnSpell(spell)}
+                              disabled={character.gold < 50 || (spellDef.minLevel && character.level < spellDef.minLevel)}
+                            >
+                              Lernen (50 Gold)
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })
+                  ) : (
+                    <p className="text-center italic">Du kennst bereits alle verfügbaren Zauber</p>
+                  )}
+                </div>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
