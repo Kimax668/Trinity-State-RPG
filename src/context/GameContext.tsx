@@ -3,96 +3,7 @@ import { toast } from 'sonner';
 import { Character, GameAction, GameState, Item, Monster, Quest, Equipment, Location } from '../types/game';
 import { items, monster_templates, npcs, orte, standard_quests } from '../data/gameData';
 import zauberDefinitionen from '../data/zauberData';
-
-// Initial locations with details
-const initialOrteDetails: Record<string, Location> = {
-  "Hauptstadt": {
-    name: "Hauptstadt",
-    beschreibung: "Das Zentrum des Königreichs mit vielen Händlern und Dienstleistungen.",
-    entdeckt: true,
-    istDorf: false
-  },
-  "Wald": {
-    name: "Wald",
-    beschreibung: "Ein dichter Wald voller Leben und Gefahren.",
-    entdeckt: true,
-    monsterLevel: 1
-  },
-  "Berge": {
-    name: "Berge",
-    beschreibung: "Raue und gefährliche Berge mit starken Gegnern.",
-    entdeckt: true,
-    monsterLevel: 5
-  },
-  "See": {
-    name: "See",
-    beschreibung: "Ein großer See mit mysteriösen Kreaturen.",
-    entdeckt: true,
-    monsterLevel: 3
-  },
-  "Höhle": {
-    name: "Höhle",
-    beschreibung: "Eine dunkle Höhle voller Monster.",
-    entdeckt: true,
-    monsterLevel: 7
-  },
-  "Wüste": {
-    name: "Wüste",
-    beschreibung: "Eine heiße und unwirtliche Wüste.",
-    entdeckt: true,
-    monsterLevel: 10
-  },
-  "Dornendorf": {
-    name: "Dornendorf",
-    beschreibung: "Ein kleines Dorf am Rande des Waldes.",
-    entdeckt: false,
-    istDorf: true,
-    minLevel: 3
-  },
-  "Bergfried": {
-    name: "Bergfried",
-    beschreibung: "Ein Dorf in den Bergen, bekannt für seine Schmiede.",
-    entdeckt: false,
-    istDorf: true,
-    minLevel: 8
-  },
-  "Seehain": {
-    name: "Seehain",
-    beschreibung: "Ein Fischerdorf am Ufer des großen Sees.",
-    entdeckt: false,
-    istDorf: true,
-    minLevel: 5
-  },
-  "Verlorene Ruinen": {
-    name: "Verlorene Ruinen",
-    beschreibung: "Uralte Ruinen mit gefährlichen Untoten.",
-    entdeckt: false,
-    monsterLevel: 12,
-    minLevel: 10
-  },
-  "Tiefer Wald": {
-    name: "Tiefer Wald",
-    beschreibung: "Der tiefste Teil des Waldes mit mächtigen Kreaturen.",
-    entdeckt: false,
-    monsterLevel: 8,
-    minLevel: 7
-  },
-  "Verlassene Mine": {
-    name: "Verlassene Mine",
-    beschreibung: "Eine alte Mine voller Monster und Schätze.",
-    entdeckt: false,
-    monsterLevel: 15,
-    minLevel: 12
-  }
-};
-
-// Initial equipment state
-const initialEquipment: Equipment = {
-  waffe: null,
-  ruestung: null,
-  helm: null,
-  accessoire: null
-};
+import locationsData from '../data/locationsData';
 
 // Initial character state
 const createInitialCharacter = (name: string): Character => ({
@@ -109,7 +20,12 @@ const createInitialCharacter = (name: string): Character => ({
   level: 1,
   gold: 50,
   inventar: [],
-  ausgeruestet: initialEquipment,
+  ausgeruestet: {
+    waffe: null,
+    ruestung: null,
+    helm: null,
+    accessoire: null
+  },
   zauber: [],
   aktueller_ort: "Hauptstadt",
   quest_log: [],
@@ -124,8 +40,8 @@ const initialState: GameState = {
   monsters: monster_templates,
   npcs,
   quests: standard_quests,
-  orte: ["Hauptstadt", "Wald", "Berge", "See", "Höhle", "Wüste"],
-  orteDetails: initialOrteDetails,
+  orte: Object.keys(locationsData),
+  orteDetails: locationsData,
   currentMonster: null,
   combatLog: [],
   gameScreen: 'start', // 'start', 'main', 'combat', 'shop', etc.

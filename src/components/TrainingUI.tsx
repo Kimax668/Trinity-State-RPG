@@ -34,7 +34,10 @@ const TrainingUI: React.FC = () => {
   };
 
   const handleTraining = (attribute: 'staerke' | 'intelligenz' | 'ausweichen' | 'verteidigung' | 'mana') => {
-    dispatch({ type: 'TRAIN_ATTRIBUTE', attribute });
+    const cost = calculateCost(attribute);
+    if (character.gold >= cost) {
+      dispatch({ type: 'TRAIN_ATTRIBUTE', attribute });
+    }
   };
 
   return (
