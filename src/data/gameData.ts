@@ -1,4 +1,3 @@
-
 import { Item, Monster, NPC, Quest } from '../types/game';
 
 // Items definieren
@@ -54,7 +53,7 @@ export const items: Record<string, Item> = {
   },
   "flammenstab": {
     name: "Flammenstab",
-    beschreibung: "Verursacht Feuerschaden",
+    beschreibung: "Verursacht Feuerschaden und ermöglicht Feuerball-Zauber",
     boni: {"intelligenz": 7, "statusSchaden": 5},
     faehigkeit: "feuerschaden",
     statusEffekt: "Brennen",
@@ -63,11 +62,12 @@ export const items: Record<string, Item> = {
     verkaufspreis: 25,
     verkaufbar: true,
     typ: "waffe",
-    minLevel: 5
+    minLevel: 5,
+    spellGranted: "Feuerball"
   },
   "frostwand": {
     name: "Frostwand",
-    beschreibung: "Ein magischer Stab mit eisiger Kraft",
+    beschreibung: "Ein magischer Stab mit eisiger Kraft, ermöglicht Eiszapfen-Zauber",
     boni: {"intelligenz": 6, "statusSchaden": 4},
     faehigkeit: "eisschaden",
     statusEffekt: "Gefroren", 
@@ -76,7 +76,8 @@ export const items: Record<string, Item> = {
     verkaufspreis: 30,
     verkaufbar: true,
     typ: "waffe",
-    minLevel: 8
+    minLevel: 8,
+    spellGranted: "Eiszapfen"
   },
   "lebensraeuber": {
     name: "Lebensräuber",
@@ -104,13 +105,14 @@ export const items: Record<string, Item> = {
   },
   "zauberbuch": {
     name: "Zauberbuch",
-    beschreibung: "Erhöht Intelligenz",
+    beschreibung: "Erhöht Intelligenz und gewährt den Arkaner Schuss-Zauber",
     boni: {"intelligenz": 3},
     preis: 40,
     verkaufspreis: 20,
     verkaufbar: true,
     typ: "waffe",
-    minLevel: 4
+    minLevel: 4,
+    spellGranted: "Arkaner Schuss"
   },
   "lederruestung": {
     name: "Lederrüstung",
@@ -144,14 +146,15 @@ export const items: Record<string, Item> = {
   },
   "kristallstab": {
     name: "Kristallstab",
-    beschreibung: "Erhöht magische Kräfte",
+    beschreibung: "Erhöht magische Kräfte und gewährt den Energiestoß-Zauber",
     boni: {"intelligenz": 8},
     faehigkeit: "magieboost",
     preis: 70,
     verkaufspreis: 35,
     verkaufbar: true,
     typ: "waffe",
-    minLevel: 12
+    minLevel: 12,
+    spellGranted: "Energiestoß"
   },
   "spinnenfaden": {
     name: "Spinnenfaden",
@@ -184,13 +187,14 @@ export const items: Record<string, Item> = {
   },
   "magischer_helm": {
     name: "Magischer Helm",
-    beschreibung: "Verstärkt magische Kräfte",
+    beschreibung: "Verstärkt magische Kräfte und gewährt die Gedankenlesen-Fähigkeit",
     boni: {"intelligenz": 3, "verteidigung": 2},
     preis: 65,
     verkaufspreis: 32,
     verkaufbar: true,
     typ: "helm",
-    minLevel: 8
+    minLevel: 8,
+    spellGranted: "Gedankenlesen"
   },
   // Accessoires
   "glücksanhänger": {
@@ -214,7 +218,7 @@ export const items: Record<string, Item> = {
   },
   "magieamulett": {
     name: "Magieamulett",
-    beschreibung: "Verstärkt magische Fähigkeiten",
+    beschreibung: "Verstärkt magische Fähigkeiten und gewährt den Manaregeneration-Zauber",
     boni: {"intelligenz": 2},
     preis: 45,
     verkaufspreis: 22,
@@ -269,7 +273,7 @@ export const items: Record<string, Item> = {
   // Neue hochstufige Items
   "drachenzahn": {
     name: "Drachenzahn",
-    beschreibung: "Ein scharfer Zahn eines erlegten Drachen",
+    beschreibung: "Ein scharfer Zahn eines erlegten Drachen, gewährt den Drachenatem-Zauber",
     boni: {"staerke": 12, "statusSchaden": 8},
     faehigkeit: "feuerschaden",
     statusEffekt: "Brennen",
@@ -278,7 +282,8 @@ export const items: Record<string, Item> = {
     verkaufspreis: 100,
     verkaufbar: true,
     typ: "waffe",
-    minLevel: 15
+    minLevel: 15,
+    spellGranted: "Drachenatem"
   },
   "eisruestung": {
     name: "Eisrüstung",
@@ -292,13 +297,14 @@ export const items: Record<string, Item> = {
   },
   "meisteramulett": {
     name: "Meisteramulett",
-    beschreibung: "Legendäres Amulett eines großen Zauberers",
+    beschreibung: "Legendäres Amulett eines großen Zauberers, gewährt den Zeitstillstand-Zauber",
     boni: {"intelligenz": 5, "ausweichen": 3, "verteidigung": 2},
     preis: 250,
     verkaufspreis: 125,
     verkaufbar: true,
     typ: "accessoire",
-    minLevel: 15
+    minLevel: 15,
+    spellGranted: "Zeitstillstand"
   }
 };
 

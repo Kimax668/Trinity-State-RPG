@@ -1,4 +1,3 @@
-
 export interface Item {
   id?: string;          // Added unique ID for each item instance
   name: string;
@@ -12,6 +11,7 @@ export interface Item {
   statusEffekt?: string;   // Status effect applied (burning, freezing, etc.)
   statusDauer?: number;    // Duration of status effect in turns
   minLevel?: number;       // Minimum level required to use/equip
+  spellGranted?: string;   // Spell granted by this item when equipped
 }
 
 export interface Monster {
@@ -90,6 +90,7 @@ export interface Character {
   }[];
   entdeckte_orte?: string[]; // Discovered locations
   attributeTrainingCount?: Record<string, number>; // Track training count per attribute
+  grantedSpells?: string[]; // Spells granted by equipment
 }
 
 export interface Location {
@@ -122,6 +123,7 @@ export type GameState = {
   };
   zauberkostenFaktor: number; // Factor for spell cost calculation
   letzteSpeicherung?: number; // Timestamp of last autosave
+  grantedSpells?: string[]; // Spells granted by equipment
 };
 
 export interface ZauberDefinition {
