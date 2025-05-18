@@ -53,6 +53,7 @@ const TrainingUI: React.FC = () => {
               onClick={() => handleTraining('staerke')}
               variant="outline" 
               className="flex items-center"
+              disabled={character.gold < calculateCost('staerke')}
             >
               <span className="mr-1">{calculateCost('staerke')}</span>
               <span className="text-yellow-500">Gold</span>
@@ -68,6 +69,7 @@ const TrainingUI: React.FC = () => {
               onClick={() => handleTraining('intelligenz')}
               variant="outline" 
               className="flex items-center"
+              disabled={character.gold < calculateCost('intelligenz')}
             >
               <span className="mr-1">{calculateCost('intelligenz')}</span>
               <span className="text-yellow-500">Gold</span>
@@ -83,6 +85,7 @@ const TrainingUI: React.FC = () => {
               onClick={() => handleTraining('ausweichen')}
               variant="outline" 
               className="flex items-center"
+              disabled={character.gold < calculateCost('ausweichen')}
             >
               <span className="mr-1">{calculateCost('ausweichen')}</span>
               <span className="text-yellow-500">Gold</span>
@@ -98,6 +101,7 @@ const TrainingUI: React.FC = () => {
               onClick={() => handleTraining('verteidigung')}
               variant="outline" 
               className="flex items-center"
+              disabled={character.gold < calculateCost('verteidigung')}
             >
               <span className="mr-1">{calculateCost('verteidigung')}</span>
               <span className="text-yellow-500">Gold</span>
@@ -113,6 +117,7 @@ const TrainingUI: React.FC = () => {
               onClick={() => handleTraining('mana')}
               variant="outline" 
               className="flex items-center"
+              disabled={character.gold < calculateCost('mana')}
             >
               <span className="mr-1">{calculateCost('mana')}</span>
               <span className="text-yellow-500">Gold</span>

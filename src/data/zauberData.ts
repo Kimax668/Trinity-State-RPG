@@ -15,6 +15,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     schadenFaktor: 0.5,
     statusEffekt: "Brennen",
     statusDauer: 3,
+    manaBedarf: 5,
     minLevel: 1,
     verfuegbarkeit: "stadt"
   },
@@ -25,6 +26,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     schadenFaktor: 0.4,
     statusEffekt: "Gefroren",
     statusDauer: 2,
+    manaBedarf: 5,
     minLevel: 3,
     verfuegbarkeit: "stadt"
   },
@@ -33,6 +35,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     beschreibung: "Heilt deine Wunden",
     heilung: 20,
     heilungFaktor: 0.6,
+    manaBedarf: 8,
     minLevel: 2,
     verfuegbarkeit: "stadt"
   },
@@ -41,6 +44,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     beschreibung: "Ruft einen Blitz herbei, der hohen Schaden verursacht",
     schaden: 20,
     schadenFaktor: 0.6,
+    manaBedarf: 10,
     minLevel: 5,
     verfuegbarkeit: "stadt"
   },
@@ -53,6 +57,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     schadenFaktor: 0.8,
     statusEffekt: "Brennen",
     statusDauer: 3,
+    manaBedarf: 15,
     minLevel: 8,
     verfuegbarkeit: "npc_teach",
     lehrer: "Meister Ignis"
@@ -64,6 +69,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     schadenFaktor: 0.7,
     statusEffekt: "Gefroren",
     statusDauer: 3,
+    manaBedarf: 15,
     minLevel: 10,
     verfuegbarkeit: "npc_teach",
     lehrer: "Frostweise Glacius"
@@ -75,6 +81,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     schadenFaktor: 0.2,
     statusEffekt: "Betäubt",
     statusDauer: 1,
+    manaBedarf: 12,
     minLevel: 7,
     verfuegbarkeit: "npc_teach",
     lehrer: "Meisterin Sonya"
@@ -88,6 +95,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     schadenFaktor: 0.4,
     heilung: 10,
     heilungFaktor: 0.3,
+    manaBedarf: 15,
     minLevel: 12,
     verfuegbarkeit: "npc_quest",
     questgeber: "Schattenmagier Vex"
@@ -99,6 +107,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     beschreibung: "Mächtige Heilung, die einen Großteil deiner Lebenspunkte wiederherstellt",
     heilung: 50,
     heilungFaktor: 1.0,
+    manaBedarf: 25,
     minLevel: 15,
     verfuegbarkeit: "npc_drop",
     monsterDrop: "Lichtgeist"
@@ -112,6 +121,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     schadenFaktor: 1.2,
     statusEffekt: "Brennen",
     statusDauer: 4,
+    manaBedarf: 35,
     minLevel: 20,
     verfuegbarkeit: "npc_drop",
     monsterDrop: "Feuerlord"
@@ -123,6 +133,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     schadenFaktor: 0.9,
     heilung: 20,
     heilungFaktor: 0.5,
+    manaBedarf: 30,
     minLevel: 25,
     verfuegbarkeit: "npc_quest",
     questgeber: "Nekromant Mortis"
@@ -132,8 +143,9 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     beschreibung: "Erschafft einen mächtigen Schild, der Schaden absorbiert",
     heilung: 30,
     heilungFaktor: 0.7,
-    schildWert: 40,  // New property for shield value
-    schildFaktor: 0.8, // Intelligence scaling for shield
+    schildWert: 40,
+    schildFaktor: 0.8,
+    manaBedarf: 25,
     minLevel: 18,
     verfuegbarkeit: "npc_teach",
     lehrer: "Erzmagier Luminor"
@@ -145,6 +157,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     schadenFaktor: 1.3,
     statusEffekt: "Chaoskraft",
     statusDauer: 3,
+    manaBedarf: 40,
     minLevel: 30,
     verfuegbarkeit: "npc_drop",
     monsterDrop: "Chaoswächter"
@@ -154,7 +167,8 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     beschreibung: "Nutzt eigene Lebenskraft, um massiven Schaden zu verursachen",
     schaden: 70,
     schadenFaktor: 1.5,
-    selbstSchaden: 15, // Damage to self
+    selbstSchaden: 15,
+    manaBedarf: 45,
     minLevel: 35,
     verfuegbarkeit: "npc_quest",
     questgeber: "Blutmagier Sanguinus"
@@ -164,7 +178,8 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     beschreibung: "Kraftvolle Heilung, die alle negativen Statuseffekte entfernt",
     heilung: 80,
     heilungFaktor: 1.2,
-    statusCleanse: true, // Removes negative status effects
+    statusCleanse: true,
+    manaBedarf: 50,
     minLevel: 40,
     verfuegbarkeit: "npc_drop",
     monsterDrop: "Phönixkönig"
@@ -172,7 +187,8 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
   "Zeitverzerrung": {
     name: "Zeitverzerrung",
     beschreibung: "Verzerrt die Zeit und erlaubt einen zusätzlichen Angriff",
-    extraAktion: true, // Gives an extra action
+    extraAktion: true,
+    manaBedarf: 60,
     minLevel: 45,
     verfuegbarkeit: "npc_quest",
     questgeber: "Zeitmagier Chronos"
@@ -184,6 +200,7 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     schadenFaktor: 2.0,
     statusEffekt: "Elementarexplosion",
     statusDauer: 5,
+    manaBedarf: 80,
     minLevel: 50,
     verfuegbarkeit: "npc_drop",
     monsterDrop: "Elementardrache"
