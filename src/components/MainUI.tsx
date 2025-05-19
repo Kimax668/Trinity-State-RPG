@@ -9,7 +9,7 @@ import TrainingUI from './TrainingUI';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Scroll, MapPin, ShieldAlert, Sword, Sparkles } from "lucide-react";
+import { Trophy, Scroll, MapPin, ShieldAlert, Sword, Sparkles, Star } from "lucide-react";
 
 const MainUI: React.FC = () => {
   const { state, dispatch } = useGameContext();
@@ -22,6 +22,19 @@ const MainUI: React.FC = () => {
   const hasMana = (char: any): char is { mana: number; max_mana: number } => {
     return typeof char.mana === 'number' && typeof char.max_mana === 'number';
   };
+  
+  // Count how many achievement tiers have been completed
+  const countCompletedAchievements = () => {
+    if (!character.erfolge) return 0;
+    
+    return character.erfolge.reduce((total, achievement) => {
+      return total + achievement.abgeschlossen.filter(Boolean).length;
+    }, 0);
+  };
+  
+  const completedAchievements = countCompletedAchievements();
+  const totalAchievementTiers = character.erfolge ? 
+    character.erfolge.length * character.erfolge[0].stufen.length : 0;
 
   return (
     <div className="flex flex-col gap-4 p-2 md:p-4 page-container">
@@ -35,6 +48,12 @@ const MainUI: React.FC = () => {
                 <Trophy size={16} className="mr-1" />
                 <span className="text-sm font-semibold">Lvl. {character.level}</span>
               </div>
+              {completedAchievements > 0 && (
+                <div className="ml-2 flex items-center bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full border border-purple-300">
+                  <Star size={16} className="mr-1" />
+                  <span className="text-sm font-semibold">{completedAchievements}/{totalAchievementTiers}</span>
+                </div>
+              )}
             </div>
             <div className="text-sm text-gray-600 flex items-center">
               <MapPin size={14} className="mr-1" />

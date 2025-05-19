@@ -1,3 +1,4 @@
+
 export interface Item {
   id?: string;          // Added unique ID for each item instance
   name: string;
@@ -64,6 +65,18 @@ export interface Equipment {
   accessoire: Item | null;
 }
 
+// Neue Schnittstelle für Erfolge
+export interface Achievement {
+  id: string;
+  name: string;
+  beschreibung: string;
+  typ: 'monster_kills' | 'gold_earned' | 'quests_completed' | 'level_reached';
+  ziel: string;  // Monster name, or "all" for quests/gold
+  stufen: number[];  // z.B. [10, 25, 50, 100] für Monster-Tötungen
+  fortschritt: number;
+  abgeschlossen: boolean[];  // z.B. [true, false, false, false] für die Stufen
+}
+
 export interface Character {
   name: string;
   hp: number;
@@ -91,6 +104,8 @@ export interface Character {
   entdeckte_orte?: string[]; // Discovered locations
   attributeTrainingCount?: Record<string, number>; // Track training count per attribute
   grantedSpells?: string[]; // Spells granted by equipment
+  erfolge?: Achievement[];  // Neue Eigenschaft für Erfolge
+  monsterKills?: Record<string, number>; // Track monster kills by name
 }
 
 export interface Location {
@@ -174,4 +189,6 @@ export type GameAction =
   | { type: 'UPDATE_COMBAT_LOG'; message: string }
   | { type: 'TOGGLE_AUTOSAVE' }
   | { type: 'DISCOVER_LOCATION'; location: string }
+  | { type: 'UPDATE_ACHIEVEMENT'; monsterName: string }
   | { type: 'SAVE_GAME' };
+

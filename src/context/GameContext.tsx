@@ -30,7 +30,50 @@ const createInitialCharacter = (name: string): Character => ({
   aktueller_ort: "Hauptstadt",
   quest_log: [],
   unverteilte_punkte: 0, // Unassigned stat points
-  entdeckte_orte: ["Hauptstadt", "Wald", "Berge", "See", "Höhle", "Wüste"]
+  entdeckte_orte: ["Hauptstadt", "Wald", "Berge", "See", "Höhle", "Wüste"],
+  monsterKills: {}, // Initialize monster kills tracking
+  erfolge: [
+    {
+      id: "wolf_kills",
+      name: "Wolfsjäger",
+      beschreibung: "Besiege eine bestimmte Anzahl an Wölfen",
+      typ: "monster_kills",
+      ziel: "Wolf",
+      stufen: [10, 25, 50, 100],
+      fortschritt: 0,
+      abgeschlossen: [false, false, false, false]
+    },
+    {
+      id: "goblin_kills",
+      name: "Goblin-Schlächter",
+      beschreibung: "Besiege eine bestimmte Anzahl an Goblins",
+      typ: "monster_kills",
+      ziel: "Goblin",
+      stufen: [10, 25, 50, 100],
+      fortschritt: 0,
+      abgeschlossen: [false, false, false, false]
+    },
+    {
+      id: "skeleton_kills",
+      name: "Knochenjäger",
+      beschreibung: "Besiege eine bestimmte Anzahl an Skeletten",
+      typ: "monster_kills",
+      ziel: "Skelett",
+      stufen: [10, 25, 50, 100],
+      fortschritt: 0,
+      abgeschlossen: [false, false, false, false]
+    },
+    {
+      id: "spider_kills",
+      name: "Spinnentöter",
+      beschreibung: "Besiege eine bestimmte Anzahl an Spinnen",
+      typ: "monster_kills",
+      ziel: "Spinne",
+      stufen: [10, 25, 50, 100],
+      fortschritt: 0,
+      abgeschlossen: [false, false, false, false]
+    }
+  ]
 });
 
 // Initial game state
@@ -237,7 +280,9 @@ const performAutoSave = (state: GameState) => {
       ausgeruestet: state.character.ausgeruestet,
       unverteilte_punkte: state.character.unverteilte_punkte,
       statusEffekte: state.character.statusEffekte,
-      entdeckte_orte: state.character.entdeckte_orte
+      entdeckte_orte: state.character.entdeckte_orte,
+      monsterKills: state.character.monsterKills,
+      erfolge: state.character.erfolge
     };
     
     localStorage.setItem(`rpg_save_${state.character.name}`, JSON.stringify(saveData));
@@ -252,6 +297,50 @@ const performAutoSave = (state: GameState) => {
     console.error("Fehler beim automatischen Speichern:", error);
     return state;
   }
+};
+
+// Helper function for updating achievements
+const updateAchievements = (state: GameState, monsterName: string): GameState => {
+  const { character } = state;
+  
+  if (!character.monsterKills) {
+    character.monsterKills = {};
+  }
+  
+  // Increment kill counter
+  if (!character.monsterKills[monsterName]) {
+    character.monsterKills[monsterName] = 1;
+  } else {
+    character.monsterKills[monsterName]++;
+  }
+
+  // Check for achievement updates
+  if (!character.erfolge) return state;
+
+  const updatedErfolge = character.erfolge.map(erfolg => {
+    if (erfolg.typ === 'monster_kills' && erfolg.ziel === monsterName) {
+      const newErfolg = { ...erfolg };
+      newErfolg.fortschritt = character.monsterKills[monsterName] || 0;
+      
+      // Update achievement completions
+      newErfolg.abgeschlossen = newErfolg.stufen.map((stufe, index) => {
+        if (newErfolg.fortschritt >= stufe) {
+          if (!erfolg.abgeschlossen[index]) {
+            // New achievement level unlocked
+            toast.success(`Erfolg freigeschaltet: ${erfolg.name} (${newErfolg.fortschritt}/${stufe})`);
+          }
+          return true;
+        }
+        return false;
+      });
+      
+      return newErfolg;
+    }
+    return erfolg;
+  });
+  
+  character.erfolge = updatedErfolge;
+  return state;
 };
 
 // Game reducer
@@ -1070,7 +1159,9 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ausgeruestet: state.character.ausgeruestet,
         unverteilte_punkte: state.character.unverteilte_punkte,
         statusEffekte: state.character.statusEffekte,
-        entdeckte_orte: state.character.entdeckte_orte
+        entdeckte_orte: state.character.entdeckte_orte,
+        monsterKills: state.character.monsterKills,
+        erfolge: state.character.erfolge
       };
       
       localStorage.setItem(`rpg_save_${state.character.name}`, JSON.stringify(saveData));
@@ -1082,6 +1173,9 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         loadedCharacters: [...new Set([...state.loadedCharacters, state.character.name])]
       };
     }
+
+    case 'UPDATE_ACHIEVEMENT':
+      return updateAchievements(newState, action.monsterName);
 
     default:
       return state;
