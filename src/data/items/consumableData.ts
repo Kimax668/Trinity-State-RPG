@@ -21,6 +21,24 @@ export const consumableData: Record<string, Item> = {
     verkaufbar: true,
     typ: "verbrauchbar"
   },
+  "manatrank": {
+    name: "Manatrank",
+    beschreibung: "Stellt 30 Mana wieder her",
+    boni: {"mana": 30},
+    preis: 25,
+    verkaufspreis: 12,
+    verkaufbar: true,
+    typ: "verbrauchbar"
+  },
+  "grosser_manatrank": {
+    name: "Großer Manatrank",
+    beschreibung: "Stellt 60 Mana wieder her",
+    boni: {"mana": 60},
+    preis: 50,
+    verkaufspreis: 25,
+    verkaufbar: true,
+    typ: "verbrauchbar"
+  },
   "feuertrank": {
     name: "Feuertrank",
     beschreibung: "Verursacht Brennen beim Gegner",

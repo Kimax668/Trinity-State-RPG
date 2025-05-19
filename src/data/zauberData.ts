@@ -1,4 +1,3 @@
-
 import { ZauberDefinition } from '../types/game';
 
 // Organize zauber by availability type
@@ -47,6 +46,17 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     manaBedarf: 10,
     minLevel: 5,
     verfuegbarkeit: "stadt"
+  },
+  
+  "Manaregeneration": {
+    name: "Manaregeneration",
+    beschreibung: "Regeneriert einen Teil deiner Mana",
+    heilung: 0,
+    mana: 15,
+    manaBedarf: 0,
+    minLevel: 4,
+    verfuegbarkeit: "npc_teach",
+    lehrer: "Elara die Magierin"
   },
   
   // NPC teacher spells (intermediate)
@@ -204,6 +214,15 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     minLevel: 50,
     verfuegbarkeit: "npc_drop",
     monsterDrop: "Elementardrache"
+  },
+  "Zeitstillstand": {
+    name: "Zeitstillstand",
+    beschreibung: "Stoppt die Zeit kurz und gibt dir eine zusätzliche Aktion",
+    extraAktion: true,
+    manaBedarf: 40,
+    minLevel: 15,
+    verfuegbarkeit: "npc_quest",
+    questgeber: "Zeitmagier Chronos"
   }
 };
 

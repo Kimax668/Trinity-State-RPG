@@ -30,7 +30,8 @@ export const accessoryData: Record<string, Item> = {
     verkaufspreis: 22,
     verkaufbar: true,
     typ: "accessoire",
-    minLevel: 4
+    minLevel: 4,
+    spellGranted: "Manaregeneration"
   },
   "verteidigungsamulett": {
     name: "Verteidigungsamulett",
