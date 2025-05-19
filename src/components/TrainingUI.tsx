@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useGameContext } from '../context/GameContext';
 import { Button } from '@/components/ui/button';
@@ -5,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Swords, Brain, Shield, Sparkles, Footprints } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
 const TrainingUI: React.FC = () => {
   const { state, dispatch } = useGameContext();
   const { character, trainingCosts } = state;
+  const { toast } = useToast();
 
   // Stelle sicher, dass attributeTrainingCount initialisiert ist
   const trainingCount = character.attributeTrainingCount || {
@@ -38,6 +41,22 @@ const TrainingUI: React.FC = () => {
     const cost = calculateCost(attribute);
     if (character.gold >= cost) {
       dispatch({ type: 'TRAIN_ATTRIBUTE', attribute });
+      
+      // Zeige Feedback an
+      toast({
+        title: "Training abgeschlossen",
+        description: `Du hast dein ${attribute === 'staerke' ? 'Stärke' : 
+                      attribute === 'intelligenz' ? 'Intelligenz' : 
+                      attribute === 'ausweichen' ? 'Ausweichen' : 
+                      attribute === 'verteidigung' ? 'Verteidigung' : 'Mana'} verbessert.`,
+      });
+    } else {
+      // Zeige Fehlermeldung an
+      toast({
+        title: "Nicht genug Gold",
+        description: `Du benötigst ${cost} Gold für dieses Training.`,
+        variant: "destructive"
+      });
     }
   };
   
@@ -60,7 +79,32 @@ const TrainingUI: React.FC = () => {
   
   // Handle learning a spell
   const handleLearnSpell = (spell: string) => {
-    dispatch({ type: 'LEARN_SPELL', spell });
+    // Überprüfen, ob der Zauber bereits durch einen ausgerüsteten Gegenstand gewährt wird
+    if (character.grantedSpells && character.grantedSpells.includes(spell)) {
+      toast({
+        title: "Zauber bereits bekannt",
+        description: "Dieser Zauber wird bereits durch einen deiner ausgerüsteten Gegenstände gewährt.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (character.gold >= 50) {
+      dispatch({ type: 'LEARN_SPELL', spell });
+      
+      // Zeige Feedback an
+      toast({
+        title: "Zauber gelernt",
+        description: `Du hast den Zauber "${spell}" erfolgreich gelernt.`
+      });
+    } else {
+      // Zeige Fehlermeldung an
+      toast({
+        title: "Nicht genug Gold",
+        description: "Du benötigst 50 Gold, um diesen Zauber zu lernen.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

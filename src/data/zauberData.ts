@@ -1,4 +1,3 @@
-
 import { ZauberDefinition } from '../types/game';
 
 // Organize zauber by availability type
