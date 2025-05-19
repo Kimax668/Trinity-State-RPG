@@ -24,14 +24,14 @@ export const accessoryData: Record<string, Item> = {
   },
   "magieamulett": {
     name: "Magieamulett",
-    beschreibung: "Verstärkt magische Fähigkeiten und gewährt den Manaregeneration-Zauber",
+    beschreibung: "Verstärkt magische Fähigkeiten und gewährt sofort den Manaregeneration-Zauber",
     boni: {"intelligenz": 2},
     preis: 45,
     verkaufspreis: 22,
     verkaufbar: true,
     typ: "accessoire",
     minLevel: 4,
-    spellGranted: "Manaregeneration"
+    spellGranted: "Manaregeneration" // Stellt sicher, dass der Zauber gewährt wird
   },
   "verteidigungsamulett": {
     name: "Verteidigungsamulett",
@@ -45,7 +45,7 @@ export const accessoryData: Record<string, Item> = {
   },
   "meisteramulett": {
     name: "Meisteramulett",
-    beschreibung: "Legendäres Amulett eines großen Zauberers, gewährt den Zeitstillstand-Zauber",
+    beschreibung: "Legendäres Amulett eines großen Zauberers, gewährt sofort den Zeitstillstand-Zauber",
     boni: {"intelligenz": 5, "ausweichen": 3, "verteidigung": 2},
     preis: 250,
     verkaufspreis: 125,

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useGameContext } from '../context/GameContext';
 import { Button } from '@/components/ui/button';
@@ -42,10 +41,17 @@ const TrainingUI: React.FC = () => {
     }
   };
   
-  // Get available spells based on character level
+  // Get available spells based on character level, excluding already known spells and spells granted by equipment
   const getAvailableSpells = () => {
+    // Get all spells the character knows (directly learned or via equipment)
+    const allKnownSpells = [
+      ...character.zauber,
+      ...(character.grantedSpells || [])
+    ];
+    
+    // Filter available spells
     const allSpells = Object.entries(state.zauberDefinitionen)
-      .filter(([spellName, _]) => !character.zauber.includes(spellName))
+      .filter(([spellName, _]) => !allKnownSpells.includes(spellName))
       .filter(([_, spell]) => !spell.minLevel || character.level >= spell.minLevel)
       .map(([name, _]) => name);
     
