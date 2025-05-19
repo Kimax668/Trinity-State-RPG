@@ -1,116 +1,139 @@
 
 import React, { useState, useEffect } from 'react';
 import { useGameContext } from '../context/GameContext';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Sword, Trophy, MapPin, Scroll } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const StartScreen: React.FC = () => {
-  const [name, setName] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [savedChars, setSavedChars] = useState<string[]>([]);
-  const { dispatch, loadSavedCharacters, loadCharacter } = useGameContext();
-
+  const { state, dispatch } = useGameContext();
+  const { loadedCharacters, autoSave } = state;
+  
+  const [characterName, setCharacterName] = useState<string>('');
+  const [selectedCharacter, setSelectedCharacter] = useState<string>('');
+  
+  // Load saved characters from localStorage on first render
   useEffect(() => {
-    // Load saved characters
-    const chars = loadSavedCharacters();
-    setSavedChars(chars);
-  }, [loadSavedCharacters]);
+    const savedCharsString = localStorage.getItem('rpg_savedCharacters');
+    if (savedCharsString) {
+      const savedCharacters = JSON.parse(savedCharsString);
+      
+      // Update global state with saved character names
+      Object.keys(savedCharacters).forEach(charName => {
+        const char = savedCharacters[charName];
+        if (char && typeof char === 'object') {
+          state.loadedCharacters.push(charName);
+        }
+      });
+    }
+  }, []);
+  
+  const createCharacter = () => {
+    if (characterName.trim() === '') return;
+    dispatch({ type: 'CREATE_CHARACTER', name: characterName });
+  };
+  
+  const loadCharacter = () => {
+    if (!selectedCharacter) return;
+    
+    const savedCharsString = localStorage.getItem('rpg_savedCharacters');
+    if (savedCharsString) {
+      const savedCharacters = JSON.parse(savedCharsString);
+      if (savedCharacters[selectedCharacter]) {
+        // Load the character
+        const character = savedCharacters[selectedCharacter];
 
-  const handleCreateCharacter = () => {
-    if (name.trim()) {
-      dispatch({ type: 'CREATE_CHARACTER', name: name.trim() });
+        // Check if the character has achievements or kill counts
+        if (!character.erfolge || character.erfolge.length === 0) {
+          // Ensure monsterKills is initialized if needed
+          if (!character.monsterKills) {
+            character.monsterKills = {};
+          }
+        }
+        
+        // Dispatch the character to the state
+        dispatch({ type: 'LOAD_CHARACTER', character });
+      }
     }
   };
-
-  const handleLoadCharacter = (characterName: string) => {
-    loadCharacter(characterName);
+  
+  const toggleAutoSave = () => {
+    dispatch({ type: 'TOGGLE_AUTOSAVE' });
   };
-
+  
   return (
-    <div className="min-h-screen flex items-center justify-center py-10">
-      <div className="w-full max-w-md p-6 parchment">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 fantasy-title">Trinity-State-RPG</h1>
-          <div className="flex justify-center space-x-2 mb-6">
-            <Sword className="text-rpg-accent h-8 w-8" />
-            <Trophy className="text-rpg-secondary h-8 w-8" />
-            <MapPin className="text-rpg-primary h-8 w-8" />
-            <Scroll className="text-rpg-accent h-8 w-8" />
-          </div>
-          <p className="text-lg mb-4">Willkommen im Reich der Abenteuer!</p>
-        </div>
-        
-        {!showForm ? (
-          <div className="space-y-4">
-            <Button 
-              onClick={() => setShowForm(true)}
-              className="w-full rpg-button"
-            >
-              Neuer Charakter
-            </Button>
-            
-            {savedChars.length > 0 && (
-              <div className="mt-8">
-                <h2 className="text-center text-xl font-semibold mb-4 fantasy-title">Gespeicherte Charaktere</h2>
-                <div className="space-y-2">
-                  {savedChars.map((char) => (
-                    <div
-                      key={char}
-                      className="p-3 border border-rpg-secondary rounded-md cursor-pointer bg-white bg-opacity-50 hover:bg-opacity-70 flex items-center justify-between transition-all"
-                      onClick={() => handleLoadCharacter(char)}
-                    >
-                      <div className="flex items-center">
-                        <Sword className="mr-2 h-5 w-5 text-rpg-primary" />
-                        <span>{char}</span>
-                      </div>
-                      <Button 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLoadCharacter(char);
-                        }}
-                      >
-                        Laden
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+    <div className="flex items-center justify-center min-h-screen bg-cover bg-center" style={{ backgroundImage: "url('/fantasy-bg.jpg')" }}>
+      <Card className="w-[350px] shadow-lg border-none bg-opacity-90 bg-white">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-bold fantasy-title">RPG Abenteuer</CardTitle>
+          <CardDescription>Beginne dein Fantasy-Abenteuer</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="new" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="new">Neuer Charakter</TabsTrigger>
+              <TabsTrigger value="load">Charakter laden</TabsTrigger>
+            </TabsList>
+            <TabsContent value="new" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="character-name">Charaktername</Label>
+                <Input 
+                  id="character-name" 
+                  value={characterName} 
+                  onChange={(e) => setCharacterName(e.target.value)} 
+                  placeholder="Name eingeben..." 
+                />
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">Charaktername:</label>
-              <Input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full border-rpg-secondary"
-                placeholder="Gib einen Namen ein..."
-              />
-            </div>
-            
-            <div className="flex space-x-3">
               <Button 
-                onClick={handleCreateCharacter}
-                disabled={!name.trim()}
-                className="flex-1 rpg-button"
+                className="w-full" 
+                onClick={createCharacter}
+                disabled={!characterName.trim()}
               >
                 Erstellen
               </Button>
+            </TabsContent>
+            <TabsContent value="load" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="saved-character">Gespeicherte Charaktere</Label>
+                <select 
+                  id="saved-character" 
+                  value={selectedCharacter} 
+                  onChange={(e) => setSelectedCharacter(e.target.value)}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="">Wähle einen Charakter...</option>
+                  {loadedCharacters.map(char => (
+                    <option key={char} value={char}>{char}</option>
+                  ))}
+                </select>
+              </div>
               <Button 
-                onClick={() => setShowForm(false)}
-                variant="outline"
-                className="flex-1"
+                className="w-full" 
+                onClick={loadCharacter}
+                disabled={!selectedCharacter}
               >
-                Zurück
+                Laden
               </Button>
-            </div>
+            </TabsContent>
+          </Tabs>
+          
+          <div className="flex items-center space-x-2 mt-6 pt-6 border-t">
+            <Switch 
+              checked={autoSave} 
+              onCheckedChange={toggleAutoSave} 
+              id="autosave"
+            />
+            <Label htmlFor="autosave">Auto-Speichern aktivieren</Label>
           </div>
-        )}
-      </div>
+          
+          <div className="mt-4 text-xs text-center text-gray-500">
+            Version 1.0.0 | © 2024 Fantasy RPG
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

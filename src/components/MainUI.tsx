@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useGameContext } from '../context/GameContext';
 import CharacterUI from './CharacterUI';
 import LocationUI from './LocationUI';
@@ -14,6 +13,14 @@ import { Trophy, Scroll, MapPin, ShieldAlert, Sword, Sparkles, Star } from "luci
 const MainUI: React.FC = () => {
   const { state, dispatch } = useGameContext();
   const { character } = state;
+
+  // Check if achievements need to be initialized
+  useEffect(() => {
+    if (character && (!character.erfolge || character.erfolge.length === 0)) {
+      console.log("Initializing achievements for existing character");
+      dispatch({ type: 'INITIALIZE_ACHIEVEMENTS' });
+    }
+  }, [character, dispatch]);
 
   // Calculate level progress percentage
   const levelProgressPercent = (character.xp / (character.level * 100)) * 100;

@@ -190,5 +190,5 @@ export type GameAction =
   | { type: 'TOGGLE_AUTOSAVE' }
   | { type: 'DISCOVER_LOCATION'; location: string }
   | { type: 'UPDATE_ACHIEVEMENT'; monsterName: string }
+  | { type: 'INITIALIZE_ACHIEVEMENTS'; }  // New action for initializing achievements
   | { type: 'SAVE_GAME' };
-
