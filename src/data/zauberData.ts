@@ -1,3 +1,4 @@
+
 import { ZauberDefinition } from '../types/game';
 
 // Organize zauber by availability type
@@ -52,8 +53,9 @@ const zauberDefinitionen: Record<string, ZauberDefinition> = {
     name: "Manaregeneration",
     beschreibung: "Regeneriert einen Teil deiner Mana",
     heilung: 0,
-    mana: 15,
+    heilungFaktor: 0,
     manaBedarf: 0,
+    manaRegeneration: 15, // Using a property that makes semantic sense
     minLevel: 4,
     verfuegbarkeit: "npc_teach",
     lehrer: "Elara die Magierin"

@@ -134,6 +134,7 @@ export interface ZauberDefinition {
   heilung?: number;        // Healing amount
   heilungFaktor?: number;  // Intelligence multiplier for healing
   manaBedarf?: number;     // Future mana cost
+  manaRegeneration?: number; // Mana regeneration amount
   statusEffekt?: string;   // Status effect applied (burning, freezing, etc.)
   statusDauer?: number;    // Duration of status effect in turns
   minLevel?: number;       // Minimum level requirement
