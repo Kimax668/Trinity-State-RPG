@@ -175,8 +175,8 @@ const TrainingUI: React.FC = () => {
                               {spellDef.minLevel && (
                                 <p className="text-xs text-blue-600">Benötigt Level {spellDef.minLevel}</p>
                               )}
-                              {spellDef.manaKosten && (
-                                <p className="text-xs text-blue-400">Mana: {spellDef.manaKosten}</p>
+                              {spellDef.manaBedarf && (
+                                <p className="text-xs text-blue-400">Mana: {spellDef.manaBedarf}</p>
                               )}
                             </div>
                             <Button 
